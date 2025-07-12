@@ -112,6 +112,61 @@ def create(repo, title, head, base):
     except Exception as e:
         click.echo(f"Error creating pull request: {e}", err=True)
 
+@github.group()
+def issues():
+    """Commands for interacting with GitHub Issues."""
+    pass
+
+@issues.command()
+@click.option('--repo', required=True, help='The GitHub repository (e.g., owner/repo).')
+@click.option('--state', default='open', type=click.Choice(['open', 'closed', 'all']), help='State of the issues to pull.')
+def pull(repo, state):
+    """Pulls issues from a GitHub repository."""
+    click.echo(f'Pulling {state} issues from {repo}...')
+    token = load_github_token()
+    if not token:
+        click.echo("Error: GitHub Personal Access Token not found. Please run 'bughunter github init' first.", err=True)
+        return
+
+    try:
+        g = Github(token)
+        owner, repo_name = repo.split('/')
+        repository = g.get_user().get_repo(repo_name)
+        
+        issues = repository.get_issues(state=state)
+        for issue in issues:
+            click.echo(f'  #{issue.number}: {issue.title} (State: {issue.state})')
+    except Exception as e:
+        click.echo(f"Error pulling issues: {e}", err=True)
+
+@github.group()
+def comments():
+    """Commands for interacting with GitHub comments."""
+    pass
+
+@comments.command()
+@click.option('--repo', required=True, help='The GitHub repository (e.g., owner/repo).')
+@click.option('--issue', type=int, required=True, help='The issue or pull request number.')
+@click.option('--body', required=True, help='The comment body.')
+def push(repo, issue, body):
+    """Pushes a comment to a GitHub issue or pull request."""
+    click.echo(f'Pushing comment to {repo}#{issue}...')
+    token = load_github_token()
+    if not token:
+        click.echo("Error: GitHub Personal Access Token not found. Please run 'bughunter github init' first.", err=True)
+        return
+
+    try:
+        g = Github(token)
+        owner, repo_name = repo.split('/')
+        repository = g.get_user().get_repo(repo_name)
+        
+        issue_obj = repository.get_issue(issue)
+        issue_obj.create_comment(body)
+        click.echo('Comment pushed successfully.')
+    except Exception as e:
+        click.echo(f"Error pushing comment: {e}", err=True)
+
 @cli.command()
 def autoclean():
 
@@ -161,9 +216,14 @@ def scan(scan_file_path):
     click.echo(f'Reporting on scan result from: {scan_file_path}')
     click.echo(' (This is a placeholder for actual scan result parsing and reporting.)')
 
-@cli.command()
+@cli.group()
+def publish():
+    """Commands for publishing the package."""
+    pass
+
+@publish.command('do')
 @click.option('--repository', default='pypi', help='The repository to publish to (e.g., pypi, testpypi).')
-def publish(repository):
+def publish_do(repository):
     """Publishes the package to a specified repository (e.g., PyPI)."""
     click.echo(f'Publishing package to {repository}...')
     
@@ -201,6 +261,34 @@ def publish_init():
     click.echo("For TestPyPI, the repository URL is https://test.pypi.org/legacy/")
     click.echo("Once set, you can run: bughunter publish [--repository testpypi]")
 
+@cli.command()
+@click.argument('scan_file_path')
+def test_after_scan(scan_file_path):
+    """Runs tests after performing a scan."""
+    click.echo(f'--- Running scan for: {scan_file_path} ---')
+    # Simulate scan reporting (as per bughunter report result scan)
+    click.echo(' (This is a placeholder for actual scan result parsing and reporting.)')
+    click.echo('Scan simulation complete.')
+
+    click.echo('\n--- Running tests ---')
+    try:
+        # Ensure virtual environment is activated for pytest
+        # This assumes the virtual environment is named 'venv' or '.venv'
+        # and is in the project root.
+        # For a more robust solution, you might need to locate the venv dynamically.
+        pytest_command = [os.path.join(os.getcwd(), 'venv', 'bin', 'pytest')] # Assuming venv is in project root
+        if not os.path.exists(pytest_command[0]):
+            pytest_command = [os.path.join(os.getcwd(), '.venv', 'bin', 'pytest')] # Try .venv
+        if not os.path.exists(pytest_command[0]):
+            click.echo("Error: pytest executable not found in venv or .venv. Please ensure your virtual environment is set up correctly.", err=True)
+            return
+
+        subprocess.run(pytest_command, check=True)
+        click.echo('Tests passed successfully!')
+    except subprocess.CalledProcessError as e:
+        click.echo(f'Tests failed: {e}', err=True)
+    except FileNotFoundError:
+        click.echo('Error: pytest not found. Make sure it\'s installed in your virtual environment.', err=True)
+
 if __name__ == '__main__':
     cli()
-

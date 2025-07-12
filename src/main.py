@@ -90,11 +90,27 @@ def pr():
 @click.option('--base', default='main', help='The name of the branch you want to merge your changes into.')
 def create(repo, title, head, base):
     """Creates a new pull request on GitHub."""
-    click.echo(f'Attempting to create PR in {repo}...')
-    click.echo(f'  Title: {title}')
-    click.echo(f'  Head: {head}')
-    click.echo(f'  Base: {base}')
-    click.echo(' (This is a placeholder for actual GitHub API call to create PR.)')
+    token = load_github_token()
+    if not token:
+        click.echo("Error: GitHub Personal Access Token not found. Please run 'bughunter github init' first.", err=True)
+        return
+
+    try:
+        g = Github(token)
+        # Assuming the repo is in the format 'owner/repo_name'
+        owner, repo_name = repo.split('/')
+        repository = g.get_user().get_repo(repo_name) # This assumes the token belongs to the owner
+        # Alternatively, for any public repo: repository = g.get_repo(repo)
+
+        pull_request = repository.create_pull(
+            title=title,
+            body="Created by bughunter-cli", # You can add a body option later
+            head=head,
+            base=base
+        )
+        click.echo(f"Successfully created pull request: {pull_request.html_url}")
+    except Exception as e:
+        click.echo(f"Error creating pull request: {e}", err=True)
 
 @cli.command()
 def autoclean():
@@ -173,6 +189,17 @@ def publish(repository):
         click.echo(f'Error publishing package: {e.stderr.decode()}', err=True)
     except FileNotFoundError:
         click.echo('Error: twine not found. Make sure it\'s installed in your virtual environment.', err=True)
+
+@publish.command('init')
+def publish_init():
+    """Initializes publishing credentials for PyPI/TestPyPI."""
+    click.echo("To publish your package, you need to provide your PyPI/TestPyPI credentials.")
+    click.echo("The recommended way is to set environment variables:")
+    click.echo("  export TWINE_USERNAME=\"__token__\"")
+    click.echo("  export TWINE_PASSWORD=\"your_pypi_api_token\"")
+    click.echo("Replace 'your_pypi_api_token' with your actual API token from PyPI or TestPyPI.")
+    click.echo("For TestPyPI, the repository URL is https://test.pypi.org/legacy/")
+    click.echo("Once set, you can run: bughunter publish [--repository testpypi]")
 
 if __name__ == '__main__':
     cli()

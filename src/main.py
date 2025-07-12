@@ -4,6 +4,9 @@ import shutil
 import glob
 import subprocess
 from github import Github
+from dotenv import load_dotenv
+
+load_dotenv()
 
 CONFIG_FILE = os.path.join(os.path.expanduser('~'), '.bughunter_config')
 

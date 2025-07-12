@@ -1,0 +1,5 @@
+
+# Temporary directories and build artifacts
+.tmp_metadata/
+dist/
+venv/

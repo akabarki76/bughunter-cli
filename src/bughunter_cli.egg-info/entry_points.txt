@@ -1,0 +1,2 @@
+[console_scripts]
+bughunter = src.main:cli

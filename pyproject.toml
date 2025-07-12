@@ -1,0 +1,6 @@
+[project]
+name = "bughunter-cli"
+version = "0.1.0"
+
+[project.scripts]
+bughunter = "src.main:cli"

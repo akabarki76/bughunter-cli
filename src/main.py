@@ -3,10 +3,17 @@ import os
 import shutil
 import glob
 import subprocess
+import requests
+import google.generativeai as genai
 from github import Github
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# Configure Gemini API
+gemini_api_key = os.getenv("GEMINI_API_KEY")
+if gemini_api_key:
+    genai.configure(api_key=gemini_api_key)
 
 CONFIG_FILE = os.path.join(os.path.expanduser('~'), '.bughunter_config')
 
@@ -24,6 +31,41 @@ def load_github_token():
                 return line.strip().split('=')[1]
     return None
 
+def find_subdomains(target):
+    """Finds subdomains of a target domain using crt.sh."""
+    try:
+        response = requests.get(f'https://crt.sh/?q=%.{target}&output=json')
+        response.raise_for_status()  # Raise an exception for bad status codes
+
+        subdomains = set()
+        for entry in response.json():
+            name_value = entry.get('name_value', '')
+            if name_value:
+                # crt.sh returns multiple lines for some certs, split them
+                for subdomain in name_value.split('\n'):
+                    # Remove wildcard prefixes
+                    if subdomain.startswith('*.'):
+                        subdomain = subdomain[2:]
+                    subdomains.add(subdomain.strip())
+        return sorted(list(subdomains))
+
+    except requests.exceptions.RequestException as e:
+        click.echo(f'Error connecting to crt.sh: {e}', err=True)
+        return None
+    except ValueError:
+        click.echo('Error parsing JSON response from crt.sh.', err=True)
+        return None
+
+def call_ai_api(prompt):
+    """Calls the Gemini API and returns the response."""
+    if not gemini_api_key:
+        return "Error: GEMINI_API_KEY not configured. Please set it in your .env file."
+    try:
+        model = genai.GenerativeModel("gemini-pro")
+        response = model.generate_content(prompt)
+        return response.text
+    except Exception as e:
+        return f"Error calling Gemini API: {e}"
 
 @click.group()
 def cli():
@@ -292,6 +334,81 @@ def test_after_scan(scan_file_path):
         click.echo(f'Tests failed: {e}', err=True)
     except FileNotFoundError:
         click.echo('Error: pytest not found. Make sure it\'s installed in your virtual environment.', err=True)
+
+@cli.group()
+def scan():
+    """Commands for scanning targets."""
+    pass
+
+@scan.command()
+@click.option('--target', required=True, help='The target domain to scan for subdomains.')
+def subdomains(target):
+    """Finds subdomains of a target domain using crt.sh."""
+    click.echo(f'[*] Searching for subdomains for {target}...')
+    subdomain_list = find_subdomains(target)
+    if subdomain_list:
+        click.echo(f'[+] Found {len(subdomain_list)} unique subdomains:')
+        for subdomain in subdomain_list:
+            click.echo(subdomain)
+    else:
+        click.echo('[-] No subdomains found.')
+
+@scan.command()
+@click.argument("target")
+@click.option("--top-ports", help="Scan top N ports (default: 100)", default=100)
+def ports(target, top_ports):
+    """Scan open ports on a target."""
+    click.echo(f"[*] Scanning top {top_ports} ports on {target}...")
+    if not shutil.which("nmap"):
+        click.echo("Error: nmap is not installed. Please install it to use this feature.", err=True)
+        return
+    
+    cmd = ["nmap", "--top-ports", str(top_ports), "-T4", target]
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        click.echo(result.stdout)
+    except FileNotFoundError:
+        click.echo("Error: nmap is not installed. Please install it to use this feature.", err=True)
+    except subprocess.CalledProcessError as e:
+        click.echo(f"Error during nmap scan:\n{e.stderr}", err=True)
+
+
+@cli.group()
+def ai():
+    """Commands for AI-powered analysis."""
+    pass
+
+@ai.command()
+@click.option('--target', required=True, help='The target domain to analyze.')
+def analyze(target):
+    """Analyzes a target and its subdomains for potential vulnerabilities."""
+    click.echo(f'[*] Starting AI analysis for {target}...')
+    
+    subdomain_list = find_subdomains(target)
+    
+    if subdomain_list is None:
+        click.echo('[-] AI analysis aborted due to an error in subdomain enumeration.', err=True)
+        return
+
+    click.echo(f'[+] Found {len(subdomain_list)} subdomains. Preparing analysis...')
+    
+    prompt = f"Analyze the following domain and its subdomains for potential security vulnerabilities. Provide a brief summary of potential weak points and suggest attack vectors.\n\nDomain: {target}\n\nSubdomains: {', '.join(subdomain_list)}"
+    
+    analysis_result = call_ai_api(prompt)
+    
+    click.echo('\n--- AI Analysis ---')
+    click.echo(analysis_result)
+    click.echo('--- End of AI Analysis ---')
+
+@ai.command('generate-payloads')
+@click.option("--type", help="Payload type (e.g., xss, sqli, ssrf)", required=True)
+@click.option("--target-tech", help="Target tech stack (e.g., php, nodejs)", default="")
+def generate_payloads(type, target_tech):
+    """Generate AI-powered attack payloads."""
+    prompt = f"Generate 5 {type} payloads for {target_tech} applications. Return only a bulleted list."
+    payloads = call_ai_api(prompt)
+    click.echo(f"Generated {type.upper()} payloads:\n{payloads}")
+
 
 if __name__ == '__main__':
     cli()

@@ -69,3 +69,9 @@ This document outlines ideas for the `bughunter-cli`, a tool that uses AI to fin
 - **Interactive Mode:** An interactive `bughunter shell` that guides the user through the process of scanning, reviewing, and patching.
 - **CI/CD Integration:** Provide a GitHub Action or GitLab CI component to run `bughunter` automatically in pipelines.
 - **Rich Reports:** Generate HTML reports with syntax highlighting, code snippets, and clear visualizations of the issues.
+
+- `bughunter pull-push`: A command to synchronize findings between the local environment and a remote server or git repository.
+  - `pull`: Download the latest bug reports and analysis results from the server.
+  - `push`: Upload local findings and manual corrections to the server.
+  - `--remote <url>`: Specify the remote server URL.
+  - `--repo`: Use the git repository as the remote storage.

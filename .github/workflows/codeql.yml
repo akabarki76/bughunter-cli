@@ -1,0 +1,198 @@
+name: "Advanced CodeQL + AI Security Analysis"
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  schedule:
+    - cron: '17 17 * * 5'
+
+jobs:
+  codeql-analysis:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+      packages: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - language: python
+          build-mode: none
+        - language: javascript-typescript
+          build-mode: none
+        - language: java-kotlin
+          build-mode: none
+        - language: c-cpp
+          build-mode: manual
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 2
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: ${{ matrix.language }}
+        build-mode: ${{ matrix.build-mode }}
+        queries: security-extended,security-and-quality
+
+    - name: Build project (C/C++ only)
+      if: matrix.language == 'c-cpp'
+      run: |
+        ./configure
+        make -j$(nproc)
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:${{ matrix.language }}"
+
+  ai-security-scan:
+    name: AI-Powered Security Scan
+    runs-on: ubuntu-latest
+    needs: codeql-analysis
+    permissions:
+      security-events: write
+      contents: read
+      
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install bughunter-cli with AI dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install bughunter-cli[ai]
+        echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> $GITHUB_ENV
+        echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> $GITHUB_ENV
+
+    - name: Run AI-powered security scan
+      run: |
+        bughunter-cli ai scan-repo . \
+          --gemini \
+          --chatgpt \
+          --output ai-report.json
+        
+        # Generate human-readable report
+        bughunter-cli ai generate-report ai-report.json --format markdown > ai-security-report.md
+
+    - name: Upload AI security report
+      uses: actions/upload-artifact@v3
+      with:
+        name: ai-security-report
+        path: ai-security-report.md
+
+    - name: Upload SARIF for GitHub Security
+      run: |
+        # Convert AI findings to SARIF format
+        bughunter-cli utils ai-to-sarif ai-report.json -o ai-scan.sarif
+      if: always()
+
+    - name: Upload SARIF results
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: ai-scan.sarif
+      if: always()
+
+  ai-vulnerability-analysis:
+    name: AI Vulnerability Analysis
+    runs-on: ubuntu-latest
+    needs: [codeql-analysis, ai-security-scan]
+    steps:
+    - name: Download CodeQL results
+      uses: actions/download-artifact@v3
+      with:
+        name: codeql-sarif
+        path: codeql-results
+
+    - name: Download AI results
+      uses: actions/download-artifact@v3
+      with:
+        name: ai-security-report
+        path: ai-results
+
+    - name: Combine and analyze results
+      run: |
+        pip install jq
+        
+        # Combine CodeQL and AI results
+        jq -s '.[0].runs + .[1].runs' \
+          codeql-results/codeql.sarif \
+          ai-results/ai-scan.sarif > combined.sarif
+        
+        # AI-powered triage and prioritization
+        bughunter-cli ai triage combined.sarif \
+          --gemini \
+          --output prioritized-findings.json
+        
+        # Generate executive report
+        bughunter-cli ai generate-report prioritized-findings.json \
+          --format markdown > executive-report.md
+
+    - name: Upload Executive Report
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-executive-report
+        path: executive-report.md
+
+    - name: Create Security Summary
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          const report = fs.readFileSync('executive-report.md', 'utf8');
+          
+          await github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: `## AI Security Analysis Summary\n\n${report}`
+          });
+      if: github.event_name == 'pull_request'
+
+  container-scan:
+    name: Container Security Scan
+    runs-on: ubuntu-latest
+    needs: codeql-analysis
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Build Docker image
+      run: docker build -t app-image .
+
+    - name: Scan container with AI
+      run: |
+        docker save app-image -o app.tar
+        bughunter-cli ai scan-container app.tar \
+          --gemini \
+          --output container-scan.json
+        
+        bughunter-cli ai generate-report container-scan.json \
+          --format markdown > container-report.md
+
+    - name: Upload Container Report
+      uses: actions/upload-artifact@v3
+      with:
+        name: container-security-report
+        path: container-report.md
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:${{matrix.language}}"

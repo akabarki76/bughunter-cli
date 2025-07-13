@@ -1,0 +1,18 @@
+Metadata-Version: 2.4
+Name: bughunter-cli
+Version: 0.2.0
+Summary: A CLI tool for bug hunting and development tasks.
+Author-email: Your Name <your.email@example.com>
+Project-URL: Homepage, https://github.com/akabarki76/bughunter-cli
+Project-URL: Bug Tracker, https://github.com/akabarki76/bughunter-cli/issues
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Requires-Dist: click==8.1.7
+Requires-Dist: PyGithub==2.2.0
+
+# bughunter-cli
+
+A command-line interface for bug hunting and development tasks.

@@ -1,4 +1,3 @@
-import pytest
 from src.main import analyze
 from unittest.mock import patch
 from click.testing import CliRunner

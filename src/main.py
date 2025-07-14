@@ -525,6 +525,127 @@ def dependencies(path):
     except Exception as e:
         click.echo(f"An unexpected error occurred: {e}", err=True)
 
+@scan.command('c-cpp')
+@click.argument('path', type=click.Path(exists=True))
+def c_cpp(path):
+    """Scans C/C++ code for vulnerabilities using cppcheck."""
+    click.echo(f"[*] Scanning {path} with cppcheck...")
+
+    if not shutil.which("cppcheck"):
+        click.echo("Error: cppcheck is not installed. Please install it to use this feature.", err=True)
+        click.echo("On Debian/Ubuntu, run: sudo apt-get install cppcheck")
+        return
+
+    cmd = ["cppcheck", "--enable=all", path]
+
+    try:
+        # cppcheck writes its findings to stderr, so we capture it
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        
+        if result.stderr:
+            click.echo("[!] cppcheck found the following issues:")
+            click.echo(result.stderr)
+        else:
+            click.echo("[+] No issues found by cppcheck.")
+
+    except FileNotFoundError:
+        click.echo("Error: cppcheck is not installed.", err=True)
+    except Exception as e:
+        click.echo(f"An unexpected error occurred: {e}", err=True)
+
+@scan.command()
+@click.argument('path', type=click.Path(exists=True))
+@click.option('--autocorrect', is_flag=True, help='Automatically correct found web vulnerabilities.')
+def web(path, autocorrect):
+    """Scans a web project for vulnerabilities using a targeted Semgrep ruleset."""
+    click.echo(f"[*] Scanning {path} for web vulnerabilities with Semgrep...")
+    
+    semgrep_cmd = ["semgrep", "scan", "--json", "--config", "r/owasp-top-ten", path]
+    
+    try:
+        result = subprocess.run(semgrep_cmd, capture_output=True, text=True)
+        if result.returncode not in [0, 1]:
+            click.echo(f"Error during Semgrep scan:\n{result.stderr}", err=True)
+            return
+            
+        findings = json.loads(result.stdout)
+        
+        if not findings['results']:
+            click.echo("[+] No web vulnerabilities found.")
+            return
+
+        click.echo(f"[!] Found {len(findings['results'])} potential web vulnerabilities.")
+
+        if not autocorrect:
+            for finding in findings['results']:
+                click.echo(f"\n- Rule: {finding['check_id']}")
+                click.echo(f"  File: {finding['path']}:{finding['start']['line']}")
+                click.echo(f"  Message: {finding['extra']['message']}")
+            return
+
+        click.echo("[*] Starting AI-powered autocorrection for web vulnerabilities...")
+        for finding in findings['results']:
+            file_path = finding['path']
+            start_line = finding['start']['line']
+            end_line = finding['end']['line']
+            rule_message = finding['extra']['message']
+            
+            with open(file_path, 'r') as f:
+                file_lines = f.readlines()
+
+            vulnerable_snippet = "".join(file_lines[start_line - 1:end_line])
+            
+            prompt = f"""
+The following code from a web application has a vulnerability:
+'{rule_message}'
+
+Vulnerable code from '{file_path}':
+```
+{vulnerable_snippet}
+```
+
+Rewrite the vulnerable code snippet to fix the issue while maintaining its original functionality and style.
+Return only the corrected code block, without any explanation or markdown formatting.
+"""
+            
+            click.echo(f"\n[*] Analyzing vulnerability in {file_path}:{start_line}...")
+            suggested_fix = call_ai_api(prompt).strip()
+
+            if suggested_fix.startswith("```") and suggested_fix.endswith("```"):
+                suggested_fix = "\n".join(suggested_fix.split('\n')[1:-1])
+
+            click.echo("[*] AI has suggested a fix. Please review the changes:")
+            
+            diff = difflib.unified_diff(
+                vulnerable_snippet.splitlines(keepends=True),
+                suggested_fix.splitlines(keepends=True),
+                fromfile='Original',
+                tofile='Patched',
+            )
+            
+            for line in diff:
+                if line.startswith('+'):
+                    click.secho(line, fg='green', nl=False)
+                elif line.startswith('-'):
+                    click.secho(line, fg='red', nl=False)
+                else:
+                    click.echo(line, nl=False)
+
+            if click.confirm('\nDo you want to apply this patch?'):
+                new_file_lines = file_lines[:start_line - 1] + suggested_fix.splitlines(keepends=True) + file_lines[end_line:]
+                with open(file_path, 'w') as f:
+                    f.writelines(new_file_lines)
+                click.echo(f"[*] Patch applied to {file_path}")
+            else:
+                click.echo("[*] Patch skipped.")
+
+    except FileNotFoundError:
+        click.echo("Error: semgrep is not installed. Please install it to use this feature.", err=True)
+    except json.JSONDecodeError:
+        click.echo(f"Error parsing Semgrep JSON output.", err=True)
+    except Exception as e:
+        click.echo(f"An unexpected error occurred: {e}", err=True)
+
 
 @cli.group()
 def ai():

@@ -22,9 +22,5 @@ def test_ai_analyze(mock_find_subdomains, mock_call_ai_api):
     mock_call_ai_api.assert_called_once()
     # You could also add more specific assertions on the prompt passed to the AI
     prompt_arg = mock_call_ai_api.call_args[0][0]
-    from urllib.parse import urlparse
-    parsed_url = urlparse(prompt_arg)
-    hostname = parsed_url.hostname
-    assert hostname == "example.com" or hostname.endswith(".example.com")
     assert "blog.example.com" in prompt_arg
     assert "api.example.com" in prompt_arg

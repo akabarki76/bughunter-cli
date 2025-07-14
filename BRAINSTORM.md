@@ -75,3 +75,23 @@ This document outlines ideas for the `bughunter-cli`, a tool that uses AI to fin
   - `push`: Upload local findings and manual corrections to the server.
   - `--remote <url>`: Specify the remote server URL.
   - `--repo`: Use the git repository as the remote storage.
+
+## Future Ideas
+
+- **AI-Driven Refactoring:**
+  - `bughunter refactor <file>`: Suggest improvements to code structure, readability, and performance.
+  - AI could identify complex methods that should be broken down or suggest more efficient algorithms.
+
+- **Dependency Analysis and Management:**
+  - `bughunter deps --update`: Check for outdated dependencies, assess the security impact of updating, and suggest version bumps.
+  - Automatically update `requirements.txt` or `package.json` after user approval.
+
+- **Interactive Learning and Quizzes:**
+  - `bughunter learn`: Start an interactive session where the AI teaches the user about common vulnerabilities found in their code.
+  - `bughunter quiz --type xss`: Generate a quiz to test the user's knowledge of a specific vulnerability type.
+
+- **Code Similarity and Plagiarism Detection:**
+  - `bughunter similar <file1> <file2>`: Analyze two files to find copied or similar code blocks, which could indicate technical debt or licensing issues.
+
+- **Configuration-as-Code:**
+  - Allow all settings (scan profiles, rules, AI model preferences) to be defined in a `bughunter.yml` file within the project for version-controlled, repeatable scans.

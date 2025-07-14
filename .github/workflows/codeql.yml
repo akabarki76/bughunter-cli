@@ -26,10 +26,6 @@ jobs:
           build-mode: none
         - language: javascript-typescript
           build-mode: none
-        - language: java-kotlin
-          build-mode: none
-        - language: c-cpp
-          build-mode: manual
 
     steps:
     - name: Checkout repository
@@ -43,12 +39,6 @@ jobs:
         languages: ${{ matrix.language }}
         build-mode: ${{ matrix.build-mode }}
         queries: security-extended,security-and-quality
-
-    - name: Build project (C/C++ only)
-      if: matrix.language == 'c-cpp'
-      run: |
-        ./configure
-        make -j$(nproc)
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
@@ -192,26 +182,27 @@ jobs:
       with:
         name: container-security-report
         path: container-report.md
-        dependency-scan:
-  name: Dependency Vulnerability Scan
-  runs-on: ubuntu-latest
-  steps:
-  - name: Checkout repository
-    uses: actions/checkout@v4
+  
+  dependency-scan:
+    name: Dependency Vulnerability Scan
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-  - name: Set up Python
-    uses: actions/setup-python@v4
-    with:
-      python-version: '3.10'
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
 
-  - name: Install dependencies
-    run: pip install safety
+    - name: Install dependencies
+      run: pip install safety
 
-  - name: Scan Python dependencies
-    run: safety check --json > dependency-scan.json
+    - name: Scan Python dependencies
+      run: safety check --json > dependency-scan.json
 
-  - name: Upload results
-    uses: actions/upload-artifact@v3
-    with:
-      name: dependency-scan-results
-      path: dependency-scan.json
+    - name: Upload results
+      uses: actions/upload-artifact@v3
+      with:
+        name: dependency-scan-results
+        path: dependency-scan.json

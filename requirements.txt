@@ -1,7 +1,6 @@
-click==8.1.7
-pytest==8.2.2
-twine==5.1.1
-PyGithub==2.2.0
-python-dotenv==0.21.0
-requests==2.32.4
-google-generativeai==0.5.4
+click
+requests
+google-generativeai
+python-dotenv
+PyGithub
+semgrep

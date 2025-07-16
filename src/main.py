@@ -38,7 +38,17 @@ def load_github_token():
 def find_subdomains(target):
     """Finds subdomains of a target domain using crt.sh."""
     try:
-        response = requests.get(f'https://crt.sh/?q=%.{target}&output=json')
+        from urllib.parse import urlparse
+        
+        def validate_url(url):
+            parsed = urlparse(url)
+            if not parsed.scheme in ["http", "https"]:
+                raise ValueError("Invalid URL scheme")
+            return url
+
+        url = f'https://crt.sh/?q=%.{target}&output=json'
+        validate_url(url)
+        response = requests.get(url)
         response.raise_for_status()  # Raise an exception for bad status codes
 
         subdomains = set()
@@ -59,6 +69,7 @@ def find_subdomains(target):
     except ValueError:
         click.echo('Error parsing JSON response from crt.sh.', err=True)
         return None
+
 
 def call_ai_api(prompt):
     """Calls the Gemini API and returns the response."""

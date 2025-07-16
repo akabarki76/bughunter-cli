@@ -681,8 +681,8 @@ def generate_payloads(type, target_tech):
     """Generate AI-powered attack payloads."""
     prompt = f"Generate 5 {type} payloads for {target_tech} applications. Return only a bulleted list."
     payloads = call_ai_api(prompt)
-    click.echo(f"Generated {type.upper()} payloads:
-{payloads}")
+    click.echo(f"""Generated {type.upper()} payloads:
+{payloads}""")
 
 @cli.group()
 def vibe():

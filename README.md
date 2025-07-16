@@ -18,6 +18,15 @@ bughunter-cli is an intelligent security toolkit that fuses cutting-edge vulnera
 | Toolchain complexity            | Single-command simplicity        |
 | Static capabilities             | Continuously evolving with AI    |
 
+### Core Pillars
+
+*   **Robust Plugin-Based Architecture:** Fostering extensibility and community contributions.
+*   **Military-Grade Security Isolation:** Ensuring safe and secure execution of scans and tools.
+*   **Context-Aware AI Analysis:** Providing intelligent and actionable security insights.
+*   **Optimized Performance with Intelligent Caching:** Delivering a fast and efficient user experience.
+*   **Enterprise-Ready Features:** Supporting policy enforcement, audit trails, and compliance.
+*   **Continuous Improvement Mechanisms:** Establishing automated quality and performance gates.
+
 ##  Key Features
 
 ###  AI-Powered Intelligence

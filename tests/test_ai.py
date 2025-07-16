@@ -1,4 +1,5 @@
 import pytest
+from urllib.parse import urlparse
 from src.main import analyze
 from unittest.mock import patch
 from click.testing import CliRunner
@@ -23,5 +24,7 @@ def test_ai_analyze(mock_find_subdomains, mock_call_ai_api):
     mock_call_ai_api.assert_called_once()
     # You could also add more specific assertions on the prompt passed to the AI
     prompt_arg = mock_call_ai_api.call_args[0][0]
-    assert "blog.example.com" in prompt_arg
-    assert "api.example.com" in prompt_arg
+    from urllib.parse import urlparse
+    parsed_prompt = urlparse(prompt_arg)
+    assert parsed_prompt.hostname and parsed_prompt.hostname.endswith("blog.example.com")
+    assert parsed_prompt.hostname and parsed_prompt.hostname.endswith("api.example.com")

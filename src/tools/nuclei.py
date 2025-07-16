@@ -1,5 +1,5 @@
 # src/tools/nuclei.py
-from . import register_tool, BaseTool
+from src.utils.tool_registration import register_tool, BaseTool
 import subprocess
 
 @register_tool("nuclei")

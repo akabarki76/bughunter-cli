@@ -1,10 +1,12 @@
-from src.tool_manager import Plugin, register_plugin
+from src.utils.tool_registration import BaseTool, register_tool
 import click
 
-@register_plugin("map")
-class Map(Plugin):
-    """Visual vulnerability mapping."""
-    def execute(self, output, **kwargs):
-        """Visual vulnerability mapping."""
-        click.echo(f"Generating vulnerability map to '{output}'...")
+@register_tool("map")
+class MapTool(BaseTool):
+    name = "map"
+    description = "Visual vulnerability mapping."
+
+    def run(self, output_file=None, **kwargs):
+        click.echo(f"Generating vulnerability map to '{output_file}'...")
         click.echo("(This command is not yet implemented.)")
+        return f"Vulnerability map generated to {output_file} (not implemented)"

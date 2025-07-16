@@ -1,6 +1,6 @@
 import click
 import requests
-from src.tool_manager import Tool, register_tool
+from src.utils.tool_registration import BaseTool, register_tool
 
 def find_subdomains(target):
     """Finds subdomains of a target domain using crt.sh."""
@@ -38,7 +38,7 @@ def find_subdomains(target):
         return None
 
 @register_tool("subdomain_scanner")
-class SubdomainScanner(Tool):
+class SubdomainScanner(BaseTool):
     """A tool to find subdomains of a target domain."""
 
     def execute(self, target):

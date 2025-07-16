@@ -1,9 +1,9 @@
 import click
 import subprocess
-from src.tool_manager import Tool, register_tool
+from src.utils.tool_registration import BaseTool, register_tool
 
 @register_tool("port_scanner")
-class PortScanner(Tool):
+class PortScanner(BaseTool):
     """A tool to scan for open ports on a target."""
     dependencies = ["nmap"]
 

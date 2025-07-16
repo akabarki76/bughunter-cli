@@ -10,6 +10,8 @@ from dotenv import load_dotenv
 import json
 import difflib
 import shlex
+import yaml
+import asyncio
 from src.tools import TOOL_REGISTRY
 from src.tools import nmap, nikto, dirsearch, sqlmap, waybackurls, nuclei
 from src.tools.refactor import refactor
@@ -17,7 +19,12 @@ from src.tools.learn import learn
 from src.tools.forecast import forecast
 from src.tools.config import config
 from src.tools.map import map
-from src.utils.security import validate_url
+from src.utils.security import validate_url, run_in_sandbox, log_feedback, log_audit_event
+from src.utils.cache_utils import get_vulnerability_data
+from src.utils.policy_manager import load_security_policy
+from src.workflow_engine import execute_workflow
+
+SECURITY_POLICY = load_security_policy()
 
 load_dotenv()
 
@@ -157,6 +164,7 @@ def init():
     """Initialize GitHub integration by setting up authentication."""
     token = click.prompt('Please enter your GitHub Personal Access Token', hide_input=True)
     save_github_token(token)
+    log_audit_event("github_init", "GitHub integration initialized", {})
 
 @github.group()
 def pr():
@@ -174,6 +182,8 @@ def create(repo, title, head, base):
     if not token:
         click.echo("Error: GitHub Personal Access Token not found. Please run 'bughunter github init' first.", err=True)
         return
+
+    log_audit_event("github_pr_create", f"GitHub PR creation initiated for {repo}", {"repo": repo, "title": title, "head": head, "base": base})
 
     try:
         g = Github(token)
@@ -207,6 +217,8 @@ def pull(repo, state):
     if not token:
         click.echo("Error: GitHub Personal Access Token not found. Please run 'bughunter github init' first.", err=True)
         return
+
+    log_audit_event("github_issues_pull", f"GitHub issues pull initiated for {repo} with state {state}", {"repo": repo, "state": state})
 
     try:
         g = Github(token)
@@ -380,47 +392,58 @@ def scan():
 @click.option('--autocorrect', is_flag=True, help='Automatically correct found vulnerabilities.')
 def code(path, autocorrect):
     """Scans a file or directory for vulnerabilities and optionally autocorrects them."""
-    click.echo(f"[*] Scanning {path} with Semgrep...")
-    
-    semgrep_cmd = ["semgrep", "scan", "--json", "--config", "auto", path]
-    
-    try:
-        result = subprocess.run(semgrep_cmd, capture_output=True, text=True)
-        if result.returncode not in [0, 1]: # Semgrep exits 1 if findings are found
-            click.echo(f"Error during Semgrep scan:\n{result.stderr}", err=True)
-            return
-            
-        findings = json.loads(result.stdout)
+    async def _code_async(path, autocorrect):
+        click.echo(f"[*] Scanning {path} with Semgrep...")
+        log_audit_event("scan_code", f"Code scan initiated for {path}", {"path": path, "autocorrect": autocorrect})
         
-        if not findings['results']:
-            click.echo("[+] No vulnerabilities found.")
-            return
+        semgrep_cmd = ["semgrep", "scan", "--json", "--config", "auto", path]
+        
+        try:
+            stdout, stderr, returncode = await run_in_sandbox(semgrep_cmd, path, description=f"Scanning {path} with Semgrep")
+            if returncode not in [0, 1]: # Semgrep exits 1 if findings are found
+                click.echo(f"Error during Semgrep scan:\n{stderr}", err=True)
+                return
+                
+            findings = json.loads(stdout)
+            
+            if not findings['results']:
+                click.echo("[+] No vulnerabilities found.")
+                return
 
-        click.echo(f"[!] Found {len(findings['results'])} vulnerabilities.")
+            click.echo(f"[!] Found {len(findings['results'])} vulnerabilities.")
 
-        if not autocorrect:
-            # Print findings if not autocorrecting
+            if not autocorrect:
+                for finding in findings['results']:
+                    click.echo(f"
+- Rule: {finding['check_id']}")
+                    click.echo(f"  File: {finding['path']}:{finding['start']['line']}")
+                    click.echo(f"  Message: {finding['extra']['message']}")
+                
+                # Check for disallowed patterns
+                with open(path, 'r') as f:
+                    full_code_content = f.read()
+                for pattern in SECURITY_POLICY.get("disallowed_patterns", []):
+                    if pattern in full_code_content:
+                        click.echo(f"
+[!] Policy Violation: Disallowed pattern '{pattern}' found in {path}", err=True)
+                return
+
+            # Autocorrect logic
+            click.echo("[*] Starting AI-powered autocorrection...")
             for finding in findings['results']:
-                click.echo(f"\n- Rule: {finding['check_id']}")
-                click.echo(f"  File: {finding['path']}:{finding['start']['line']}")
-                click.echo(f"  Message: {finding['extra']['message']}")
-            return
+                file_path = finding['path']
+                start_line = finding['start']['line']
+                end_line = finding['end']['line']
+                rule_message = finding['extra']['message']
+                
+                with open(file_path, 'r') as f:
+                    file_lines = f.readlines()
 
-        # Autocorrect logic
-        click.echo("[*] Starting AI-powered autocorrection...")
-        for finding in findings['results']:
-            file_path = finding['path']
-            start_line = finding['start']['line']
-            end_line = finding['end']['line']
-            rule_message = finding['extra']['message']
-            
-            with open(file_path, 'r') as f:
-                file_lines = f.readlines()
-
-            vulnerable_snippet = "".join(file_lines[start_line - 1:end_line])
-            
-            prompt = f"""
-The following code snippet from the file '{file_path}' has a vulnerability:
+                vulnerable_snippet = "".join(file_lines[start_line - 1:end_line])
+                
+                file_extension = os.path.splitext(file_path)[1].lstrip('.')
+                prompt = f"""
+The following {file_extension} code snippet from the file '{file_path}' has a vulnerability (Rule ID: {finding['check_id']}):
 '{rule_message}'
 
 Vulnerable code:
@@ -431,126 +454,135 @@ Vulnerable code:
 Rewrite the vulnerable code snippet to fix the issue while maintaining its original functionality and style.
 Return only the corrected code block, without any explanation or markdown formatting.
 """
-            
-            click.echo(f"\n[*] Analyzing vulnerability in {file_path}:{start_line}...")
-            suggested_fix = call_ai_api(prompt).strip()
+                
+                click.echo(f"\n[*] Analyzing vulnerability in {file_path}:{start_line}...")
+                suggested_fix = call_ai_api(prompt).strip()
 
-            # Clean up the suggestion if it's wrapped in markdown
-            if suggested_fix.startswith("```") and suggested_fix.endswith("```"):
-                suggested_fix = "\n".join(suggested_fix.split('\n')[1:-1])
+                # Clean up the suggestion if it's wrapped in markdown
+                if suggested_fix.startswith("```") and suggested_fix.endswith("```"):
+                    suggested_fix = "\n".join(suggested_fix.split('\n')[1:-1])
 
-            click.echo("[*] AI has suggested a fix. Please review the changes:")
-            
-            diff = difflib.unified_diff(
-                vulnerable_snippet.splitlines(keepends=True),
-                suggested_fix.splitlines(keepends=True),
-                fromfile='Original',
-                tofile='Patched',
-            )
-            
-            for line in diff:
-                if line.startswith('+'):
-                    click.secho(line, fg='green', nl=False)
-                elif line.startswith('-'):
-                    click.secho(line, fg='red', nl=False)
+                click.echo("[*] AI has suggested a fix. Please review the changes:")
+                
+                diff = difflib.unified_diff(
+                    vulnerable_snippet.splitlines(keepends=True),
+                    suggested_fix.splitlines(keepends=True),
+                    fromfile='Original',
+                    tofile='Patched',
+                )
+                
+                for line in diff:
+                    if line.startswith('+'):
+                        click.secho(line, fg='green', nl=False)
+                    elif line.startswith('-'):
+                        click.secho(line, fg='red', nl=False)
+                    else:
+                        click.echo(line, nl=False)
+
+                if click.confirm('\nDo you want to apply this patch?'):
+                    # Apply the patch
+                    new_file_lines = file_lines[:start_line - 1] + suggested_fix.splitlines(keepends=True) + file_lines[end_line:]
+                    with open(file_path, 'w') as f:
+                        f.writelines(new_file_lines)
+                    click.echo(f"[*] Patch applied to {file_path}")
+                    log_feedback(finding, suggested_fix, True)
                 else:
-                    click.echo(line, nl=False)
+                    click.echo("[*] Patch skipped.")
+                    log_feedback(finding, suggested_fix, False)
 
-            if click.confirm('\nDo you want to apply this patch?'):
-                # Apply the patch
-                new_file_lines = file_lines[:start_line - 1] + suggested_fix.splitlines(keepends=True) + file_lines[end_line:]
-                with open(file_path, 'w') as f:
-                    f.writelines(new_file_lines)
-                click.echo(f"[*] Patch applied to {file_path}")
-            else:
-                click.echo("[*] Patch skipped.")
-
-    except FileNotFoundError:
-        click.echo("Error: semgrep is not installed. Please install it to use this feature.", err=True)
-    except json.JSONDecodeError:
-        click.echo(f"Error parsing Semgrep JSON output.", err=True)
-    except Exception as e:
-        click.echo(f"An unexpected error occurred: {e}", err=True)
+        except FileNotFoundError:
+            click.echo("Error: semgrep is not installed. Please install it to use this feature.", err=True)
+        except json.JSONDecodeError:
+            click.echo(f"Error parsing Semgrep JSON output.", err=True)
+        except Exception as e:
+            click.echo(f"An unexpected error occurred: {e}", err=True)
+    asyncio.run(_code_async(path, autocorrect))
 
 
 @scan.command()
 @click.argument('path', type=click.Path(exists=True))
 def dependencies(path):
     """Scans project dependencies for known vulnerabilities using OSV-Scanner."""
-    click.echo(f"[*] Scanning dependencies in {path} with OSV-Scanner...")
+    async def _dependencies_async(path):
+        click.echo(f"[*] Scanning dependencies in {path} with OSV-Scanner...")
+        log_audit_event("scan_dependencies", f"Dependency scan initiated for {path}", {"path": path})
 
-    if not shutil.which("osv-scanner"):
-        click.echo("Error: osv-scanner is not installed. Please install it to use this feature.", err=True)
-        click.echo("See installation instructions at https://google.github.io/osv-scanner/")
-        return
-
-    cmd = ["osv-scanner", "--json", path]
-
-    try:
-        result = subprocess.run(cmd, capture_output=True, text=True)
-
-        if result.returncode != 0 and result.returncode != 1:
-             click.echo(f"Error during OSV-Scanner execution:\n{result.stderr}", err=True)
-             return
-
-        if not result.stdout.strip():
-            click.echo("[+] No vulnerabilities found.")
+        if not shutil.which("osv-scanner"):
+            click.echo("Error: osv-scanner is not installed. Please install it to use this feature.", err=True)
+            click.echo("See installation instructions at https://google.github.io/osv-scanner/")
             return
 
-        data = json.loads(result.stdout)
+        cmd = ["osv-scanner", "--json", path]
 
-        if not data.get('results'):
-            click.echo("[+] No vulnerabilities found.")
-            return
+        try:
+            stdout, stderr, returncode = await run_in_sandbox(cmd, path, description=f"Scanning dependencies in {path} with OSV-Scanner")
 
-        click.echo("[!] Found vulnerabilities:")
-        for res in data['results']:
-            for pkg_vulns in res.get('packages', []):
-                pkg_name = pkg_vulns['package']['name']
-                for vuln in pkg_vulns.get('vulnerabilities', []):
-                    vuln_id = vuln['id']
-                    vuln_summary = vuln.get('summary', 'No summary available.')
-                    click.echo(f"\n- Vulnerability: {vuln_id}")
-                    click.echo(f"  Package: {pkg_name}")
-                    click.echo(f"  Summary: {vuln_summary}")
-                    affected_versions = [v['versions'] for v in vuln.get('affected', [])]
-                    click.echo(f"  Affected Versions: {affected_versions}")
+            if returncode != 0 and returncode != 1:
+                 click.echo(f"Error during OSV-Scanner execution:\n{stderr}", err=True)
+                 return
 
-    except FileNotFoundError:
-        click.echo("Error: osv-scanner is not installed.", err=True)
-    except json.JSONDecodeError:
-        click.echo("Error: Could not parse JSON output from OSV-Scanner.", err=True)
-        click.echo(f"Raw output:\n{result.stdout}")
-    except Exception as e:
-        click.echo(f"An unexpected error occurred: {e}", err=True)
+            if not stdout.strip():
+                click.echo("[+] No vulnerabilities found.")
+                return
+
+            data = json.loads(stdout)
+
+            if not data.get('results'):
+                click.echo("[+] No vulnerabilities found.")
+                return
+
+            click.echo("[!] Found vulnerabilities:")
+            for res in data['results']:
+                for pkg_vulns in res.get('packages', []):
+                    pkg_name = pkg_vulns['package']['name']
+                    for vuln in pkg_vulns.get('vulnerabilities', []):
+                        vuln_id = vuln['id']
+                        vuln_summary = vuln.get('summary', 'No summary available.')
+                        click.echo(f"\n- Vulnerability: {vuln_id}")
+                        click.echo(f"  Package: {pkg_name}")
+                        click.echo(f"  Summary: {vuln_summary}")
+                        affected_versions = [v['versions'] for v in vuln.get('affected', [])]
+                        click.echo(f"  Affected Versions: {affected_versions}")
+
+        except FileNotFoundError:
+            click.echo("Error: osv-scanner is not installed.", err=True)
+        except json.JSONDecodeError:
+            click.echo("Error: Could not parse JSON output from OSV-Scanner.", err=True)
+            click.echo(f"Raw output:\n{stdout}") # Use stdout here, not result.stdout
+        except Exception as e:
+            click.echo(f"An unexpected error occurred: {e}", err=True)
+    asyncio.run(_dependencies_async(path))
 
 @scan.command('c-cpp')
 @click.argument('path', type=click.Path(exists=True))
 def c_cpp(path):
     """Scans C/C++ code for vulnerabilities using cppcheck."""
-    click.echo(f"[*] Scanning {path} with cppcheck...")
+    async def _c_cpp_async(path):
+        click.echo(f"[*] Scanning {path} with cppcheck...")
+        log_audit_event("scan_c_cpp", f"C/C++ scan initiated for {path}", {"path": path})
 
-    if not shutil.which("cppcheck"):
-        click.echo("Error: cppcheck is not installed. Please install it to use this feature.", err=True)
-        click.echo("On Debian/Ubuntu, run: sudo apt-get install cppcheck")
-        return
+        if not shutil.which("cppcheck"):
+            click.echo("Error: cppcheck is not installed. Please install it to use this feature.", err=True)
+            click.echo("On Debian/Ubuntu, run: sudo apt-get install cppcheck")
+            return
 
-    cmd = ["cppcheck", "--enable=all", path]
+        cmd = ["cppcheck", "--enable=all", path]
 
-    try:
-        # cppcheck writes its findings to stderr, so we capture it
-        result = subprocess.run(cmd, capture_output=True, text=True)
-        
-        if result.stderr:
-            click.echo("[!] cppcheck found the following issues:")
-            click.echo(result.stderr)
-        else:
-            click.echo("[+] No issues found by cppcheck.")
+        try:
+            # cppcheck writes its findings to stderr, so we capture it
+            stdout, stderr, returncode = await run_in_sandbox(cmd, path, description=f"Scanning {path} with cppcheck")
+            
+            if stderr:
+                click.echo("[!] cppcheck found the following issues:")
+                click.echo(stderr)
+            else:
+                click.echo("[+] No issues found by cppcheck.")
 
-    except FileNotFoundError:
-        click.echo("Error: cppcheck is not installed.", err=True)
-    except Exception as e:
-        click.echo(f"An unexpected error occurred: {e}", err=True)
+        except FileNotFoundError:
+            click.echo("Error: cppcheck is not installed.", err=True)
+        except Exception as e:
+            click.echo(f"An unexpected error occurred: {e}", err=True)
+    asyncio.run(_c_cpp_async(path))
 
 @scan.command()
 @click.argument("target")
@@ -569,45 +601,48 @@ def ports(target, top_ports):
 @click.option('--autocorrect', is_flag=True, help='Automatically correct found web vulnerabilities.')
 def web(path, autocorrect):
     """Scans a web project for vulnerabilities using a targeted Semgrep ruleset."""
-    click.echo(f"[*] Scanning {path} for web vulnerabilities with Semgrep...")
-    
-    semgrep_cmd = ["semgrep", "scan", "--json", "--config", "r/owasp-top-ten", path]
-    
-    try:
-        result = subprocess.run(semgrep_cmd, capture_output=True, text=True)
-        if result.returncode not in [0, 1]:
-            click.echo(f"Error during Semgrep scan:\n{result.stderr}", err=True)
-            return
-            
-        findings = json.loads(result.stdout)
+    async def _web_async(path, autocorrect):
+        click.echo(f"[*] Scanning {path} for web vulnerabilities with Semgrep...")
+        log_audit_event("scan_web", f"Web scan initiated for {path}", {"path": path, "autocorrect": autocorrect})
         
-        if not findings['results']:
-            click.echo("[+] No web vulnerabilities found.")
-            return
+        semgrep_cmd = ["semgrep", "scan", "--json", "--config", "r/owasp-top-ten", path]
+        
+        try:
+            stdout, stderr, returncode = await run_in_sandbox(semgrep_cmd, path, description=f"Scanning {path} for web vulnerabilities with Semgrep")
+            if returncode not in [0, 1]:
+                click.echo(f"Error during Semgrep scan:\n{stderr}", err=True)
+                return
+                
+            findings = json.loads(stdout)
+            
+            if not findings['results']:
+                click.echo("[+] No web vulnerabilities found.")
+                return
 
-        click.echo(f"[!] Found {len(findings['results'])} potential web vulnerabilities.")
+            click.echo(f"[!] Found {len(findings['results'])} potential web vulnerabilities.")
 
-        if not autocorrect:
+            if not autocorrect:
+                for finding in findings['results']:
+                    click.echo(f"\n- Rule: {finding['check_id']}")
+                    click.echo(f"  File: {finding['path']}:{finding['start']['line']}")
+                    click.echo(f"  Message: {finding['extra']['message']}")
+                return
+
+            click.echo("[*] Starting AI-powered autocorrection for web vulnerabilities...")
             for finding in findings['results']:
-                click.echo(f"\n- Rule: {finding['check_id']}")
-                click.echo(f"  File: {finding['path']}:{finding['start']['line']}")
-                click.echo(f"  Message: {finding['extra']['message']}")
-            return
+                file_path = finding['path']
+                start_line = finding['start']['line']
+                end_line = finding['end']['line']
+                rule_message = finding['extra']['message']
+                
+                with open(file_path, 'r') as f:
+                    file_lines = f.readlines()
 
-        click.echo("[*] Starting AI-powered autocorrection for web vulnerabilities...")
-        for finding in findings['results']:
-            file_path = finding['path']
-            start_line = finding['start']['line']
-            end_line = finding['end']['line']
-            rule_message = finding['extra']['message']
-            
-            with open(file_path, 'r') as f:
-                file_lines = f.readlines()
-
-            vulnerable_snippet = "".join(file_lines[start_line - 1:end_line])
-            
-            prompt = f"""
-The following code from a web application has a vulnerability:
+                vulnerable_snippet = "".join(file_lines[start_line - 1:end_line])
+                
+                file_extension = os.path.splitext(file_path)[1].lstrip('.')
+                prompt = f"""
+The following {file_extension} code from a web application has a vulnerability (Rule ID: {finding['check_id']}):
 '{rule_message}'
 
 Vulnerable code from '{file_path}':
@@ -618,44 +653,47 @@ Vulnerable code from '{file_path}':
 Rewrite the vulnerable code snippet to fix the issue while maintaining its original functionality and style.
 Return only the corrected code block, without any explanation or markdown formatting.
 """
-            
-            click.echo(f"\n[*] Analyzing vulnerability in {file_path}:{start_line}...")
-            suggested_fix = call_ai_api(prompt).strip()
+                
+                click.echo(f"\n[*] Analyzing vulnerability in {file_path}:{start_line}...")
+                suggested_fix = call_ai_api(prompt).strip()
 
-            if suggested_fix.startswith("```") and suggested_fix.endswith("```"):
-                suggested_fix = "\n".join(suggested_fix.split('\n')[1:-1])
+                if suggested_fix.startswith("```") and suggested_fix.endswith("```"):
+                    suggested_fix = "\n".join(suggested_fix.split('\n')[1:-1])
 
-            click.echo("[*] AI has suggested a fix. Please review the changes:")
-            
-            diff = difflib.unified_diff(
-                vulnerable_snippet.splitlines(keepends=True),
-                suggested_fix.splitlines(keepends=True),
-                fromfile='Original',
-                tofile='Patched',
-            )
-            
-            for line in diff:
-                if line.startswith('+'):
-                    click.secho(line, fg='green', nl=False)
-                elif line.startswith('-'):
-                    click.secho(line, fg='red', nl=False)
+                click.echo("[*] AI has suggested a fix. Please review the changes:")
+                
+                diff = difflib.unified_diff(
+                    vulnerable_snippet.splitlines(keepends=True),
+                    suggested_fix.splitlines(keepends=True),
+                    fromfile='Original',
+                    tofile='Patched',
+                )
+                
+                for line in diff:
+                    if line.startswith('+'):
+                        click.secho(line, fg='green', nl=False)
+                    elif line.startswith('-'):
+                        click.secho(line, fg='red', nl=False)
+                    else:
+                        click.echo(line, nl=False)
+
+                if click.confirm('\nDo you want to apply this patch?'):
+                    new_file_lines = file_lines[:start_line - 1] + suggested_fix.splitlines(keepends=True) + file_lines[end_line:]
+                    with open(file_path, 'w') as f:
+                        f.writelines(new_file_lines)
+                    click.echo(f"[*] Patch applied to {file_path}")
+                    log_feedback(finding, suggested_fix, True)
                 else:
-                    click.echo(line, nl=False)
+                    click.echo("[*] Patch skipped.")
+                    log_feedback(finding, suggested_fix, False)
 
-            if click.confirm('\nDo you want to apply this patch?'):
-                new_file_lines = file_lines[:start_line - 1] + suggested_fix.splitlines(keepends=True) + file_lines[end_line:]
-                with open(file_path, 'w') as f:
-                    f.writelines(new_file_lines)
-                click.echo(f"[*] Patch applied to {file_path}")
-            else:
-                click.echo("[*] Patch skipped.")
-
-    except FileNotFoundError:
-        click.echo("Error: semgrep is not installed. Please install it to use this feature.", err=True)
-    except json.JSONDecodeError:
-        click.echo(f"Error parsing Semgrep JSON output.", err=True)
-    except Exception as e:
-        click.echo(f"An unexpected error occurred: {e}", err=True)
+        except FileNotFoundError:
+            click.echo("Error: semgrep is not installed. Please install it to use this feature.", err=True)
+        except json.JSONDecodeError:
+            click.echo(f"Error parsing Semgrep JSON output.", err=True)
+        except Exception as e:
+            click.echo(f"An unexpected error occurred: {e}", err=True)
+    asyncio.run(_web_async(path, autocorrect))
 
 
 @cli.group()
@@ -694,6 +732,99 @@ def generate_payloads(type, target_tech):
     payloads = call_ai_api(prompt)
     click.echo(f"""Generated {type.upper()} payloads:
 {payloads}""")
+
+@ai.command('get-cve')
+@click.argument('cve_id')
+def get_cve(cve_id):
+    """Fetches vulnerability data for a given CVE ID, utilizing caching."""
+    click.echo(f"[*] Attempting to fetch data for {cve_id}...")
+    data = get_vulnerability_data(cve_id)
+    click.echo(json.dumps(data, indent=2))
+
+@ai.command('generate-tests')
+@click.argument('file_path', type=click.Path(exists=True))
+def generate_tests(file_path):
+    """Generates unit tests for a given code file using AI."""
+    click.echo(f"[*] Generating tests for {file_path}...")
+
+    try:
+        with open(file_path, 'r') as f:
+            code_content = f.read()
+        
+        file_extension = os.path.splitext(file_path)[1].lstrip('.')
+        file_name = os.path.basename(file_path)
+
+        prompt = f"""
+Generate unit tests for the following {file_extension} code from the file '{file_name}'.
+Focus on covering the main functionalities and edge cases.
+Return only the test code block, without any explanation or markdown formatting.
+
+Code:
+```
+{code_content}
+```
+"""
+        
+        generated_tests = call_ai_api(prompt).strip()
+
+        if generated_tests.startswith("```") and generated_tests.endswith("```"):
+            generated_tests = "\n".join(generated_tests.split('\n')[1:-1])
+
+        test_file_name = f"test_{os.path.splitext(file_name)[0]}.py"
+        test_file_path = os.path.join(os.path.dirname(file_path), test_file_name)
+
+        click.echo("[*] AI has suggested tests. Please review them:")
+        click.echo(generated_tests)
+
+        if click.confirm(f'\nDo you want to save these tests to {test_file_path}?'):
+            with open(test_file_path, 'w') as f:
+                f.write(generated_tests)
+            click.echo(f"[*] Tests saved to {test_file_path}")
+        else:
+            click.echo("[*] Test generation skipped.")
+
+    except FileNotFoundError:
+        click.echo(f"Error: File not found at {file_path}", err=True)
+    except Exception as e:
+        click.echo(f"An unexpected error occurred: {e}", err=True)
+
+
+@cli.group()
+def workflow():
+    """Commands for managing and executing workflows."""
+    pass
+
+@workflow.command()
+@click.argument('workflow_file', type=click.Path(exists=True))
+def run(workflow_file):
+    """Executes a defined workflow from a JSON or YAML file."""
+    click.echo(f"[*] Running workflow from {workflow_file}...")
+    log_audit_event("workflow_run", f"Workflow execution initiated for {workflow_file}", {"workflow_file": workflow_file})
+
+    try:
+        with open(workflow_file, 'r') as f:
+            if workflow_file.endswith('.json'):
+                workflow_definition = json.load(f)
+            elif workflow_file.endswith('.yaml') or workflow_file.endswith('.yml'):
+                workflow_definition = yaml.safe_load(f)
+            else:
+                click.echo("Error: Workflow file must be a .json, .yaml, or .yml file.", err=True)
+                return
+
+        if not isinstance(workflow_definition, list):
+            click.echo("Error: Workflow definition must be a list of steps.", err=True)
+            return
+
+        final_context = execute_workflow(workflow_definition)
+        click.echo("[*] Workflow execution complete. Final context:")
+        click.echo(json.dumps(final_context, indent=2))
+
+    except FileNotFoundError:
+        click.echo(f"Error: Workflow file not found at {workflow_file}", err=True)
+    except (json.JSONDecodeError, yaml.YAMLError) as e:
+        click.echo(f"Error parsing workflow file: {e}", err=True)
+    except Exception as e:
+        click.echo(f"An unexpected error occurred during workflow execution: {e}", err=True)
 
 @cli.group()
 def vibe():

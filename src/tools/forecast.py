@@ -1,8 +1,10 @@
+from src.tool_manager import Plugin, register_plugin
 import click
 
-@click.command()
-@click.argument('dependency')
-def forecast(dependency):
+@register_plugin("forecast")
+class Forecast(Plugin):
     """Dependency impact forecasting."""
-    click.echo(f"Forecasting impact of '{dependency}'...")
-    click.echo("(This command is not yet implemented.)")
+    def execute(self, dependency, **kwargs):
+        """Dependency impact forecasting."""
+        click.echo(f"Forecasting impact of '{dependency}'...")
+        click.echo("(This command is not yet implemented.)")

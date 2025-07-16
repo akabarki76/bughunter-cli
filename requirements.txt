@@ -4,3 +4,7 @@ google-generativeai
 python-dotenv
 PyGithub
 semgrep
+restrictedpython
+pyyaml
+cachetools
+rich

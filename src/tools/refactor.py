@@ -1,7 +1,7 @@
 import click
 import os
 import difflib
-from src.main import call_ai_api # Assuming call_ai_api is accessible here
+from src.utils.ai_utils import call_ai_api
 from src.utils.security import log_audit_event
 
 @click.command()

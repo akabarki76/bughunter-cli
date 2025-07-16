@@ -9,16 +9,15 @@ from github import Github
 from dotenv import load_dotenv
 import json
 import difflib
-import shlex
+
 import yaml
 import asyncio
 from src.tools import TOOL_REGISTRY
-from src.tools import nmap, nikto, dirsearch, sqlmap, waybackurls, nuclei
 from src.tools.refactor import refactor
 from src.tools.learn import learn
-from src.tools.forecast import forecast
-from src.tools.config import config
-from src.tools.map import map
+
+
+
 from src.utils.security import validate_url, run_in_sandbox, log_feedback, log_audit_event
 from src.utils.cache_utils import get_vulnerability_data
 from src.utils.policy_manager import load_security_policy
@@ -50,6 +49,7 @@ def load_github_token():
     return None
 
 from src.utils.security import validate_url
+from src.utils.ai_utils import call_ai_api
 
 def find_subdomains(target):
     """Finds subdomains of a target domain using crt.sh."""
@@ -77,18 +77,6 @@ def find_subdomains(target):
     except ValueError:
         click.echo('Error parsing JSON response from crt.sh.', err=True)
         return None
-
-
-def call_ai_api(prompt):
-    """Calls the Gemini API and returns the response."""
-    if not gemini_api_key:
-        return "Error: GEMINI_API_KEY not configured. Please set it in your .env file."
-    try:
-        model = genai.GenerativeModel("gemini-pro")
-        response = model.generate_content(prompt)
-        return response.text
-    except Exception as e:
-        return f"Error calling Gemini API: {e}"
 
 @click.group()
 def cli():
@@ -414,18 +402,19 @@ def code(path, autocorrect):
 
             if not autocorrect:
                 for finding in findings['results']:
-                    click.echo(f"
-- Rule: {finding['check_id']}")
-                    click.echo(f"  File: {finding['path']}:{finding['start']['line']}")
-                    click.echo(f"  Message: {finding['extra']['message']}")
+                    click.echo(f"""
+- Rule: {finding['check_id']}
+  File: {finding['path']}:{finding['start']['line']}
+  Message: {finding['extra']['message']}
+""")
                 
                 # Check for disallowed patterns
                 with open(path, 'r') as f:
                     full_code_content = f.read()
                 for pattern in SECURITY_POLICY.get("disallowed_patterns", []):
                     if pattern in full_code_content:
-                        click.echo(f"
-[!] Policy Violation: Disallowed pattern '{pattern}' found in {path}", err=True)
+                        click.echo(f"""
+[!] Policy Violation: Disallowed pattern '{pattern}' found in {path}""", err=True)
                 return
 
             # Autocorrect logic
@@ -888,9 +877,9 @@ def tags():
 
 cli.add_command(refactor)
 cli.add_command(learn)
-cli.add_command(forecast)
-cli.add_command(config)
-cli.add_command(map)
+
+
+
 
 
 if __name__ == '__main__':

@@ -1,10 +1,10 @@
 import click
-import os
+
 from rich.console import Console
 from rich.live import Live
 from rich.panel import Panel
 from rich.syntax import Syntax
-from src.main import call_ai_api # Assuming call_ai_api is accessible here
+from src.utils.ai_utils import call_ai_api
 
 console = Console()
 

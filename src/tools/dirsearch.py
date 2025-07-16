@@ -1,11 +1,13 @@
-from src.tool_manager import Plugin, register_plugin
+from src.utils.tool_registration import register_tool, BaseTool
 import subprocess
 
-@register_plugin("dirsearch")
-class DirsearchTool(Plugin):
-    dependencies = ["dirsearch"]
+@register_tool("dirsearch")
+class DirsearchTool(BaseTool):
+    name = "dirsearch"
+
     
-    def execute(self, target, output_file=None, **kwargs):
+
+    def run(self, target, output_file=None, **kwargs):
         cmd = ["dirsearch", "-u", target, "--json-report", "/dev/stdout"]
         result = subprocess.run(cmd, capture_output=True, text=True)
         

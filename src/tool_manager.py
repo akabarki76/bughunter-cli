@@ -6,27 +6,27 @@ import subprocess
 import platform
 import click
 
-TOOL_REGISTRY = {}
+PLUGIN_REGISTRY = {}
 
-def register_tool(name):
-    """A decorator to register a new tool."""
+def register_plugin(name):
+    """A decorator to register a new plugin."""
     def decorator(cls):
-        TOOL_REGISTRY[name] = cls
+        PLUGIN_REGISTRY[name] = cls
         return cls
     return decorator
 
-class Tool:
-    """Base class for all tools."""
+class Plugin:
+    """Base class for all plugins."""
     dependencies = []
 
     def __init__(self):
         self._check_dependencies()
 
     def _check_dependencies(self):
-        """Checks if all required dependencies for the tool are installed."""
+        """Checks if all required dependencies for the plugin are installed."""
         missing_deps = [dep for dep in self.dependencies if not shutil.which(dep)]
         if missing_deps:
-            if click.confirm(f"Tool '{self.__class__.__name__}' requires the following missing dependencies: {', '.join(missing_deps)}. Do you want to attempt to install them now?"):
+            if click.confirm(f"Plugin '{self.__class__.__name__}' requires the following missing dependencies: {', '.join(missing_deps)}. Do you want to attempt to install them now?"):
                 self._install_dependencies(missing_deps)
             else:
                 raise click.ClickException(f"Missing dependencies: {', '.join(missing_deps)}")
@@ -62,17 +62,17 @@ class Tool:
 
 
     def execute(self, **kwargs):
-        """Executes the tool's main functionality."""
+        """Executes the plugin's main functionality."""
         raise NotImplementedError
 
-def load_tools():
-    """Dynamically loads all tools from the 'tools' directory."""
-    tools_dir = os.path.join(os.path.dirname(__file__), 'tools')
-    for _, name, _ in pkgutil.iter_modules([tools_dir]):
-        importlib.import_module(f'src.tools.{name}')
+def load_plugins():
+    """Dynamically loads all plugins from the 'plugins' directory."""
+    plugins_dir = os.path.join(os.path.dirname(__file__), 'plugins')
+    for _, name, _ in pkgutil.iter_modules([plugins_dir]):
+        importlib.import_module(f'src.plugins.{name}')
 
-def get_tool(name):
-    """Retrieves a tool from the registry."""
-    if name not in TOOL_REGISTRY:
-        raise click.ClickException(f"Tool '{name}' not found.")
-    return TOOL_REGISTRY[name]()
+def get_plugin(name):
+    """Retrieves a plugin from the registry."""
+    if name not in PLUGIN_REGISTRY:
+        raise click.ClickException(f"Plugin '{name}' not found.")
+    return PLUGIN_REGISTRY[name]()

@@ -1,8 +1,10 @@
+from src.tool_manager import Plugin, register_plugin
 import click
 
-@click.command()
-@click.option('--output', required=True, type=click.Path(), help='Output file path for the vulnerability map.')
-def map(output):
+@register_plugin("map")
+class Map(Plugin):
     """Visual vulnerability mapping."""
-    click.echo(f"Generating vulnerability map to '{output}'...")
-    click.echo("(This command is not yet implemented.)")
+    def execute(self, output, **kwargs):
+        """Visual vulnerability mapping."""
+        click.echo(f"Generating vulnerability map to '{output}'...")
+        click.echo("(This command is not yet implemented.)")

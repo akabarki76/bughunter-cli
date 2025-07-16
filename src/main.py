@@ -558,6 +558,18 @@ def c_cpp(path):
         click.echo(f"An unexpected error occurred: {e}", err=True)
 
 @scan.command()
+@click.argument("target")
+@click.option("--top-ports", help="Scan top N ports (default: 100)", default=100)
+def ports(target, top_ports):
+    """Scan open ports on a target."""
+    if not shutil.which("nmap"):
+        click.echo("Error: nmap is not installed. Please install it to use this feature.", err=True)
+        return
+    cmd = f"nmap --top-ports {top_ports} -T4 {target}"
+    result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+    click.echo(result.stdout)
+
+@scan.command()
 @click.argument('path', type=click.Path(exists=True))
 @click.option('--autocorrect', is_flag=True, help='Automatically correct found web vulnerabilities.')
 def web(path, autocorrect):

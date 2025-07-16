@@ -28,3 +28,10 @@ bughunter = "src.main:cli"
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[tool.bandit]
+exclude_dirs = ["tests", "venv"]
+skips = ["B101"]
+
+[tool.setuptools.packages.find]
+where = ["src"]

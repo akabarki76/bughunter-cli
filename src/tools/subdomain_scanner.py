@@ -15,7 +15,7 @@ def find_subdomains(target):
 
         url = f'https://crt.sh/?q=%.{target}&output=json'
         validate_url(url)
-        response = requests.get(url)
+        response = requests.get(url, timeout=10)
         response.raise_for_status()  # Raise an exception for bad status codes
 
         subdomains = set()

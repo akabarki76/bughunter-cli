@@ -17,6 +17,7 @@ from src.tools.learn import learn
 from src.tools.forecast import forecast
 from src.tools.config import config
 from src.tools.map import map
+from src.utils.security import validate_url
 
 load_dotenv()
 
@@ -41,20 +42,14 @@ def load_github_token():
                 return line.strip().split('=')[1]
     return None
 
+from src.utils.security import validate_url
+
 def find_subdomains(target):
     """Finds subdomains of a target domain using crt.sh."""
     try:
-        from urllib.parse import urlparse
-        
-        def validate_url(url):
-            parsed = urlparse(url)
-            if not parsed.scheme in ["http", "https"]:
-                raise ValueError("Invalid URL scheme")
-            return url
-
         url = f'https://crt.sh/?q=%.{target}&output=json'
         validate_url(url)
-        response = requests.get(url)
+        response = requests.get(url, timeout=10)
         response.raise_for_status()  # Raise an exception for bad status codes
 
         subdomains = set()
@@ -565,8 +560,8 @@ def ports(target, top_ports):
     if not shutil.which("nmap"):
         click.echo("Error: nmap is not installed. Please install it to use this feature.", err=True)
         return
-    cmd = f"nmap --top-ports {top_ports} -T4 {target}"
-    result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+    cmd = ["nmap", "--top-ports", str(top_ports), "-T4", target]
+    result = subprocess.run(cmd, capture_output=True, text=True)
     click.echo(result.stdout)
 
 @scan.command()

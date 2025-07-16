@@ -1,5 +1,5 @@
 click
-requests
+requests>=2.32.1
 google-generativeai
 python-dotenv
 PyGithub

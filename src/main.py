@@ -9,8 +9,15 @@ from github import Github
 from dotenv import load_dotenv
 import json
 import difflib
-
-
+import shlex
+from src.tools import TOOL_REGISTRY
+from src.tools import nmap, nikto, dirsearch, sqlmap, waybackurls, nuclei
+from src.tools.refactor import refactor
+from src.tools.learn import learn
+from src.tools.forecast import forecast
+from src.tools.config import config
+from src.tools.map import map
+from src.utils.security import validate_url
 
 load_dotenv()
 
@@ -35,10 +42,14 @@ def load_github_token():
                 return line.strip().split('=')[1]
     return None
 
+from src.utils.security import validate_url
+
 def find_subdomains(target):
     """Finds subdomains of a target domain using crt.sh."""
     try:
-        response = requests.get(f'https://crt.sh/?q=%.{target}&output=json')
+        url = f'https://crt.sh/?q=%.{target}&output=json'
+        validate_url(url)
+        response = requests.get(url, timeout=10)
         response.raise_for_status()  # Raise an exception for bad status codes
 
         subdomains = set()
@@ -60,6 +71,7 @@ def find_subdomains(target):
         click.echo('Error parsing JSON response from crt.sh.', err=True)
         return None
 
+
 def call_ai_api(prompt):
     """Calls the Gemini API and returns the response."""
     if not gemini_api_key:
@@ -74,6 +86,25 @@ def call_ai_api(prompt):
 @click.group()
 def cli():
     pass
+
+@cli.command()
+@click.argument("tool_name")
+@click.argument("target")
+@click.option("-o", "--output", help="Output file")
+@click.option("-p", "--ports", default="1-1000", help="Port range for nmap")
+def run_tool(tool_name, target, output, **kwargs):
+    """Run security tools"""
+    if tool_name not in TOOL_REGISTRY:
+        click.echo(f"Tool not supported: {tool_name}")
+        return
+    
+    try:
+        tool = TOOL_REGISTRY[tool_name]()
+        result = tool.run(target, output_file=output, **kwargs)
+        click.echo(result)
+    except Exception as e:
+        click.echo(f"Error: {str(e)}")
+
 
 @cli.command()
 @click.option('--name', default='World', help='Name to greet.')
@@ -273,7 +304,7 @@ def publish():
 @publish.command('do')
 @click.option('--repository', default='pypi', help='The repository to publish to (e.g., pypi, testpypi).')
 def publish_do(repository):
-    """Publishes the package to a specified repository (e.g., PyPI)."""
+    """Publishing the package to a specified repository (e.g., PyPI)."""
     click.echo(f'Publishing package to {repository}...')
     
     # Ensure packages are built first
@@ -343,38 +374,6 @@ def test_after_scan(scan_file_path):
 def scan():
     """Commands for scanning targets."""
     pass
-
-@scan.command()
-@click.option('--target', required=True, help='The target domain to scan for subdomains.')
-def subdomains(target):
-    """Finds subdomains of a target domain using crt.sh."""
-    click.echo(f'[*] Searching for subdomains for {target}...')
-    subdomain_list = find_subdomains(target)
-    if subdomain_list:
-        click.echo(f'[+] Found {len(subdomain_list)} unique subdomains:')
-        for subdomain in subdomain_list:
-            click.echo(subdomain)
-    else:
-        click.echo('[-] No subdomains found.')
-
-@scan.command()
-@click.argument("target")
-@click.option("--top-ports", help="Scan top N ports (default: 100)", default=100)
-def ports(target, top_ports):
-    """Scan open ports on a target."""
-    click.echo(f"[*] Scanning top {top_ports} ports on {target}...")
-    if not shutil.which("nmap"):
-        click.echo("Error: nmap is not installed. Please install it to use this feature.", err=True)
-        return
-    
-    cmd = ["nmap", "--top-ports", str(top_ports), "-T4", target]
-    try:
-        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-        click.echo(result.stdout)
-    except FileNotFoundError:
-        click.echo("Error: nmap is not installed. Please install it to use this feature.", err=True)
-    except subprocess.CalledProcessError as e:
-        click.echo(f"Error during nmap scan:\n{e.stderr}", err=True)
 
 @scan.command()
 @click.argument('path', type=click.Path(exists=True))
@@ -552,6 +551,18 @@ def c_cpp(path):
         click.echo("Error: cppcheck is not installed.", err=True)
     except Exception as e:
         click.echo(f"An unexpected error occurred: {e}", err=True)
+
+@scan.command()
+@click.argument("target")
+@click.option("--top-ports", help="Scan top N ports (default: 100)", default=100)
+def ports(target, top_ports):
+    """Scan open ports on a target."""
+    if not shutil.which("nmap"):
+        click.echo("Error: nmap is not installed. Please install it to use this feature.", err=True)
+        return
+    cmd = ["nmap", "--top-ports", str(top_ports), "-T4", target]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    click.echo(result.stdout)
 
 @scan.command()
 @click.argument('path', type=click.Path(exists=True))
@@ -742,6 +753,13 @@ def tags():
     click.echo("- AI SRE (AI Site Reliability Engineering)")
     click.echo("- Governance and Reliability")
     click.echo("---------------------------------")
+
+
+cli.add_command(refactor)
+cli.add_command(learn)
+cli.add_command(forecast)
+cli.add_command(config)
+cli.add_command(map)
 
 
 if __name__ == '__main__':

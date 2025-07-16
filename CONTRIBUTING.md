@@ -1,74 +1,55 @@
-# Contributing to `bughunter-cli`
+# Contributing to bughunter-cli
 
-First off, thank you for considering contributing to `bughunter-cli`. It's people like you that make this project such a great tool. We are thrilled to welcome you to our community.
+First off, thank you for considering contributing to bughunter-cli! It's people like you that make bughunter-cli such a great tool.
 
-## Our Commitment to a Diverse Community
+## Where do I go from here?
 
-Our mission is to build a powerful security tool in a community that is open, welcoming, and inclusive to all. We especially encourage and support contributions from engineers who are from ethnic minorities and other underrepresented groups in technology.
+If you've noticed a bug or have a feature request, [make one](https://github.com/akabarki76/bughunter-cli/issues/new)! It's generally best if you get confirmation of your bug or approval for your feature request this way before starting to code.
 
-Please read our [Code of Conduct](./CODE_OF_CONDUCT.md) before you start. It outlines our commitment to a harassment-free and inclusive environment.
+### Fork & create a branch
 
-## How Can I Contribute?
+If this is something you think you can fix, then [fork bughunter-cli](https://github.com/akabarki76/bughunter-cli/fork) and create a branch with a descriptive name.
 
-There are many ways to contribute, from writing code and documentation to submitting bug reports and feature requests.
+A good branch name would be (where issue #123 is the ticket you're working on):
 
-### Reporting Bugs
+```sh
+git checkout -b 123-fix-bug-description
+```
 
-If you find a bug, please open an issue and provide as much detail as possible, including:
-*   A clear and descriptive title.
-*   The steps to reproduce the bug.
-*   The expected behavior and what happened instead.
-*   Your operating system and the version of `bughunter-cli` you are using.
+### Get the test suite running
 
-### Suggesting Enhancements
+Make sure you're running the test suite locally before you start making changes.
 
-If you have an idea for a new feature or an enhancement to an existing one, please open an issue to discuss it. We would love to hear your thoughts.
+```sh
+pytest
+```
 
-### Your First Code Contribution
+### Implement your fix or feature
 
-We know that contributing to a new project can be intimidating, but we are here to help. A great way to start is by looking for issues tagged with `good first issue`. These are issues that are well-suited for newcomers.
+At this point, you're ready to make your changes! Feel free to ask for help; everyone is a beginner at first 😸
 
-#### Setting Up Your Development Environment
+### Make a Pull Request
 
-1.  **Fork the repository** on GitHub.
-2.  **Clone your fork** locally:
-    ```bash
-    git clone https://github.com/your-username/bughunter-cli.git
-    cd bughunter-cli
-    ```
-3.  **Create a virtual environment:**
-    ```bash
-    python -m venv venv
-    source venv/bin/activate
-    ```
-4.  **Install the dependencies:**
-    ```bash
-    pip install -r requirements.txt
-    ```
-5.  **Install the CLI in editable mode:**
-    ```bash
-    pip install -e .
-    ```
-    Now, any changes you make to the source code will be immediately available when you run the `bughunter` command.
+At this point, you should switch back to your master branch and make sure it's up to date with bughunter-cli's master branch.
 
-#### Submitting a Pull Request
+```sh
+git remote add upstream git@github.com:akabarki76/bughunter-cli.git
+git checkout master
+git pull upstream master
+```
 
-1.  Create a new branch for your feature or bug fix:
-    ```bash
-    git checkout -b my-amazing-feature
-    ```
-2.  Make your changes and commit them with a clear and descriptive commit message.
-3.  Push your branch to your fork:
-    ```bash
-    git push origin my-amazing-feature
-    ```
-4.  Open a pull request from your fork to the `main` branch of the original repository.
-5.  In the pull request description, please explain the changes you have made and link to any relevant issues.
+Then update your feature branch from your local copy of master, and push it!
 
-## Getting Help
+```sh
+git checkout 123-fix-bug-description
+git rebase master
+git push --set-upstream origin 123-fix-bug-description
+```
 
-If you have any questions or need help with anything, please don't hesitate to:
-*   Open an issue on GitHub.
-*   Join our community on [Discord/Slack] (link to be added).
+Finally, go to GitHub and [make a Pull Request](https://github.com/akabarki76/bughunter-cli/compare)
 
-We are excited to see what you will build with us!
+### Keeping your Pull Request updated
+
+If a maintainer asks you to "rebase" your PR, they're saying that a lot of code has changed, and that you need to update your branch so it's easier to merge.
+
+To learn more about rebasing and merging, check out this guide on [syncing a fork](https://help.github.com/articles/syncing-a-fork).

@@ -1,156 +1,101 @@
 # Command Reference
 
-This page provides a detailed reference for all `bughunter-cli` commands.
+This document provides a comprehensive reference for all `bughunter-cli` commands.
 
-## Global Options
+## Core Commands
 
-*   `--help`: Show help message and exit.
+### `scan`
 
-## `scan`: Perform Security Scans
+Analyzes code, dependencies, and infrastructure for security vulnerabilities.
 
-This is the core group of commands for running security scans.
+**Usage:**
+```bash
+bughunter scan <subcommand> [options]
+```
 
----
+**Subcommands:**
 
-### `scan code <path>`
+*   `code <path>`: Scans a directory for code vulnerabilities.
+    *   `--autocorrect`: Automatically apply AI-generated patches.
+*   `dependencies <path>`: Scans a dependency file (e.g., `requirements.txt`).
+*   `subdomains <domain>`: Discovers subdomains for a given domain.
+*   `ports <ip_address>`: Scans for open ports on a given IP address.
 
-Scans a file or directory for general vulnerabilities using Semgrep.
+### `vibe`
 
-*   **Arguments:**
-    *   `<path>`: The path to the file or directory to scan.
-*   **Options:**
-    *   `--autocorrect`: Interactively find and fix vulnerabilities using AI.
+Uses a natural language interface to perform security tasks.
 
----
+**Usage:**
+```bash
+bughunter vibe "<prompt>"
+```
 
-### `scan web <path>`
+**Examples:**
+```bash
+bughunter vibe "Find XSS vulnerabilities in the auth module"
+bughunter vibe "Explain CVE-2023-12345 in simple terms"
+bughunter vibe "Generate a patch for the SQLi in userService.py"
+```
 
-Scans a web project for common web vulnerabilities (OWASP Top 10) using a targeted Semgrep ruleset.
+### `github`
 
-*   **Arguments:**
-    *   `<path>`: The path to the web project directory.
-*   **Options:**
-    *   `--autocorrect`: Interactively find and fix web vulnerabilities using AI.
+Integrates with GitHub to manage security issues.
 
----
+**Usage:**
+```bash
+bughunter github <subcommand> [options]
+```
 
-### `scan c-cpp <path>`
+**Subcommands:**
 
-Scans C/C++ code for common errors like buffer overflows, memory leaks, and undefined behavior using `cppcheck`.
+*   `init`: Initializes the GitHub integration.
+*   `create-issue "<title>"`: Creates a new GitHub issue for a security finding.
 
-*   **Arguments:**
-    *   `<path>`: The path to the C/C++ file or directory.
+## Roadmap Commands
 
----
+These commands are planned for future releases.
 
-### `scan dependencies <path>`
+### `refactor`
 
-Scans your project's dependencies for known vulnerabilities against the GitHub Advisory Database using `osv-scanner`.
+AI-assisted code refactoring.
 
-*   **Arguments:**
-    *   `<path>`: The path to the project directory.
+**Usage:**
+```bash
+bughunter refactor <file_path> --prompt "<description>"
+```
 
----
+### `learn`
 
-### `scan subdomains <target>`
+Interactive vulnerability learning modules.
 
-Finds subdomains for a target domain using the `crt.sh` database.
+**Usage:**
+```bash
+bughunter learn "<vulnerability_name>"
+```
 
-*   **Arguments:**
-    *   `<target>`: The target domain (e.g., `example.com`).
+### `forecast`
 
----
+Dependency impact forecasting.
 
-### `scan ports <target>`
+**Usage:**
+```bash
+bughunter forecast <dependency_name>@<version>
+```
 
-Scans for the most common open ports on a target using `nmap`.
+### `config`
 
-*   **Arguments:**
-    *   `<target>`: The target IP address or domain.
-*   **Options:**
-    *   `--top-ports <number>`: The number of top ports to scan (default: 100).
+Configuration for `bughunter-cli`.
 
-## `ai`: AI-Powered Analysis
+**Usage:**
+```bash
+bughunter config set llm.provider <provider_name>
+```
 
-Commands for leveraging the power of Large Language Models.
+### `map`
 
----
+Visual vulnerability mapping.
 
-### `ai analyze <target>`
-
-Performs a comprehensive AI-powered security analysis of a target domain and its subdomains.
-
-*   **Arguments:**
-    *   `<target>`: The target domain.
-
----
-
-### `ai generate-payloads`
-
-Generates custom attack payloads for specific vulnerability types and technologies.
-
-*   **Options:**
-    *   `--type <type>`: The type of payload (e.g., `xss`, `sqli`). (Required)
-    *   `--target-tech <tech>`: The target technology stack (e.g., `react`, `php`).
-
-## `vibe`: VibeOps Engineering
-
-Interact with `bughunter-cli` using natural language.
-
----
-
-### `vibe <prompt>`
-
-Interprets a natural language prompt and executes the corresponding command.
-
-*   **Arguments:**
-    *   `<prompt>`: The natural language command (e.g., `"find subdomains for example.com"`).
-
----
-
-### `tags`
-
-Displays the VibeOps engineering tags and concepts associated with this tool.
-
-## `github`: GitHub Integration
-
-Commands for interacting with GitHub repositories.
-
----
-
-### `github init`
-
-Initializes the GitHub integration by securely storing your Personal Access Token.
-
----
-
-### `github issues pull`
-
-Pulls issues from a GitHub repository.
-
-*   **Options:**
-    *   `--repo <owner/repo>`: The repository to pull issues from. (Required)
-    *   `--state <open|closed|all>`: The state of the issues to pull (default: `open`).
-
----
-
-### `github pr create`
-
-Creates a new pull request.
-
-*   **Options:**
-    *   `--repo <owner/repo>`: The repository. (Required)
-    *   `--title <title>`: The title of the pull request. (Required)
-    *   `--head <branch>`: The branch where your changes are. (Required)
-    *   `--base <branch>`: The branch you want to merge into (default: `main`).
-
----
-
-### `github comments push`
-
-Pushes a comment to a GitHub issue or pull request.
-
-*   **Options:**
-    *   `--repo <owner/repo>`: The repository. (Required)
-    *   `--issue <number>`: The issue or PR number. (Required)
-    *   `--body <body>`: The content of the comment. (Required)
+**Usage:**
+```bash
+bughunter map vulnerabilities --output <file_path.html>
+```

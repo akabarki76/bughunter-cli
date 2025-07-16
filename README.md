@@ -1,109 +1,142 @@
-# `bughunter-cli` 🐞
+# bughunter-cli 
 
-**An AI-native command-line interface for advanced bug hunting, security analysis, and automated development workflows.**
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python Version](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/)
+[![GitHub Stars](https://img.shields.io/github/stars/akabarki76/bughunter-cli)](https://github.com/akabarki76/bughunter-cli/stargazers)
 
-`bughunter-cli` is a next-generation tool that integrates powerful security scanners with Large Language Models (LLMs) to provide a seamless, intelligent, and future-proof solution for developers, security researchers, and penetration testers.
+> **The AI-powered command-line sentinel for modern security workflows**
 
-## VibeOps Engineering
+bughunter-cli is an intelligent security toolkit that fuses cutting-edge vulnerability scanners with Large Language Models to revolutionize bug hunting, security analysis, and development workflows. Built on **VibeOps** principles, it transforms security from a chore into a seamless, conversational experience.
 
-`bughunter-cli` is built on the principles of **VibeOps**, an engineering culture that leverages AI and natural language to automate and simplify the entire software development lifecycle. This tool embodies the VibeOps philosophy by:
+##  Why bughunter-cli?
 
-- **Enhancing Developer Experience (DevEx):** Providing a seamless, conversational interface to complex security and development tasks.
-- **AI-Assisted Workflow:** Using LLMs to automate reconnaissance, vulnerability analysis, and even code patching.
-- **CI/CD and Automation:** Automating routine tasks to streamline development and security operations.
-- **AI SRE:** Moving towards a future of AI-driven Site Reliability Engineering, where monitoring and remediation are increasingly automated.
+| Traditional Tools               | bughunter-cli Advantage          |
+|---------------------------------|----------------------------------|
+| Siloed scanners                 | Unified AI-powered workflow      |
+| Manual interpretation           | Natural language insights        |
+| Reactive fixes                  | Proactive AI autocorrection      |
+| Toolchain complexity            | Single-command simplicity        |
+| Static capabilities             | Continuously evolving with AI    |
 
-## Key Features
+##  Key Features
 
-*   **AI-Powered Autocorrection:** Automatically find and fix vulnerabilities in your code with AI-generated patches.
-*   **Natural Language Interface:** Interact with the tool using conversational language via the `vibe` command.
-*   **Comprehensive Scanning:**
-    *   **Code Scanning:** Language-agnostic vulnerability scanning with Semgrep.
-    *   **Dependency Scanning:** Find known vulnerabilities in your project's dependencies using `osv-scanner`.
-    *   **Reconnaissance:** Discover subdomains and scan for open ports.
-*   **Full GitHub Integration:** Manage issues, pull requests, and comments directly from your terminal.
-*   **Extensible and Future-Proof:** Designed to be a constantly evolving platform that will integrate new AI and security technologies as they emerge.
+###  AI-Powered Intelligence
+- **Conversational Interface**: `bughunter vibe "Find XSS vulnerabilities in auth module"`
+- **Autocorrection**: AI-generated patches for identified vulnerabilities
+- **Contextual Analysis**: LLM-powered vulnerability interpretation
 
-## Future-Proofing `bughunter-cli`
+###  Comprehensive Scanning Suite
+```bash
+# Code scanning (Semgrep-powered)
+bughunter scan code ./src --autocorrect
 
-The world of AI and cybersecurity is evolving at an unprecedented pace. `bughunter-cli` is designed to be a living project that will continuously adapt and integrate the latest advancements. Our commitment is to keep this tool at the forefront of technology, ensuring it remains an essential part of any modern development workflow.
+# Dependency analysis (OSV-scanner)
+bughunter scan dependencies ./requirements.txt
 
-We are actively exploring and developing features in areas such as:
+# Infrastructure recon
+bughunter scan subdomains example.com
+bughunter scan ports 192.168.1.1
+```
 
-*   **AI-Driven Refactoring:** Suggesting improvements to code structure, readability, and performance.
-*   **Advanced Dependency Management:** Proactively managing dependency updates and assessing their security impact.
-*   **Interactive Learning:** Creating a more engaging and educational experience by teaching users about the vulnerabilities found in their code.
+###  GitHub Integration
+```bash
+# Initialize GitHub integration
+bughunter github init
 
-## Installation
+# Manage security findings as issues
+bughunter github create-issue "SQLi vulnerability detected"
+```
 
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/your-username/bughunter-cli.git
-    cd bughunter-cli
-    ```
+### ️ Extensible Architecture
+- Language-agnostic scanning
+- Plugin system for new scanners
+- Future-proof AI integration points
 
-2.  **Create and activate a virtual environment:**
-    ```bash
-    python -m venv venv
-    source venv/bin/activate
-    ```
+##  Getting Started
 
-3.  **Install the required dependencies:**
-    ```bash
-    pip install -r requirements.txt
-    ```
+### Prerequisites
+- Python 3.9+
+- [Gemini API Key](https://aistudio.google.com/)
+- [GitHub PAT](https://github.com/settings/tokens)
 
-4.  **Install the CLI in editable mode:**
-    ```bash
-    pip install -e .
-    ```
+### Installation
+```bash
+git clone https://github.com/akabarki76/bughunter-cli.git
+cd bughunter-cli
+python -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
 
-5.  **Install External Scanners:**
-    *   **`osv-scanner`:** [google.github.io/osv-scanner/](https://google.github.io/osv-scanner/)
-    *   **`nmap`:** `sudo apt-get install nmap` (or your system's equivalent)
-    *   **`cppcheck`:** `sudo apt-get install cppcheck` (or your system's equivalent)
+# Install security scanners
+brew install nmap cppcheck    # macOS
+sudo apt-get install nmap cppcheck  # Debian/Ubuntu
+```
 
+### Configuration
+```bash
+# Set Gemini API key
+echo "GEMINI_API_KEY=your_key_here" > .env
 
-## Configuration
+# Configure GitHub integration
+bughunter github init
+```
 
-`bughunter-cli` requires API keys for its AI and GitHub features.
+##  Usage Examples
 
-*   **Gemini API Key:** Obtain a key from [Google AI Studio](https://aistudio.google.com/app/apikey) and set it as `GEMINI_API_KEY` in a `.env` file.
-*   **GitHub Personal Access Token:** Run `bughunter github init` and provide a PAT with `repo` and `read:org` scopes.
+### Basic Scanning
+```bash
+# Scan Python project with autocorrection
+bughunter scan code ./project --autocorrect
 
-## Usage
+# Find vulnerable dependencies
+bughunter scan dependencies ./project
+```
 
-### VibeOps Commands
+### Natural Language Interface
+```bash
+bughunter vibe "Audit authController.js for injection flaws"
+bughunter vibe "Explain CVE-2023-12345 in simple terms"
+bughunter vibe "Generate patch for the SQLi in userService.py"
+```
 
-*   **`vibe <prompt>`:** Interact with the tool using natural language.
-    *   `bughunter vibe "find subdomains for example.com"`
-*   **`tags`:** List the VibeOps engineering tags.
+### Advanced Workflows
+```bash
+# Full security audit pipeline
+bughunter vibe "Scan entire project, fix critical issues, and create GitHub tickets"
 
-### Scanning Commands
+# CI/CD integration (example)
+- name: Security Audit
+  run: |
+    bughunter scan code ./src
+    bughunter scan dependencies
+```
 
-*   **`scan code <path> [--autocorrect]`:** Scan code for vulnerabilities and optionally apply AI-powered fixes.
-*   **`scan web <path> [--autocorrect]`:** Scan a web project for vulnerabilities and optionally apply AI-powered fixes.
-*   **`scan c-cpp <path>`:** Scan C/C++ code for vulnerabilities using `cppcheck`.
-*   **`scan dependencies <path>`:** Scan project dependencies for known vulnerabilities.
-*   **`scan subdomains <target>`:** Find subdomains for a target.
-*   **`scan ports <target>`:** Scan for open ports.
+##  VibeOps Philosophy
 
----
+bughunter-cli embodies our core engineering principles:
+1. **AI-First Automation** - Machines handle routine tasks, humans solve hard problems
+2. **Conversational DevEx** - Natural language as primary interface
+3. **Continuous Evolution** - Always integrating cutting-edge AI research
+4. **Inclusive Security** - Democratizing security expertise
 
-*For a full list of commands and options, run `bughunter --help`.*
+## ️ Roadmap
+- [ ] AI-assisted refactoring engine
+  - `bughunter refactor <file_path> --prompt "Refactor this code to be more performant"`
+- [ ] Interactive vulnerability learning modules
+  - `bughunter learn "sql-injection"`
+- [ ] Dependency impact forecasting
+  - `bughunter forecast <dependency_name>@<version>`
+- [ ] Multi-LLM support (Claude, GPT, OSS models)
+  - `bughunter config set llm.provider openai`
+- [ ] Visual vulnerability mapping
+  - `bughunter map vulnerabilities --output <file_path.html>`
 
-## Our Community
+##  Contributing
+We welcome contributions from developers of all backgrounds! See our:
+- [Contributor Guidelines](CONTRIBUTING.md)
+- [Code of Conduct](CODE_OF_CONDUCT.md)
 
-**This project is more than just code; it's a community.** We are committed to building a welcoming, inclusive, and safe environment for everyone.
+Special encouragement for contributions from underrepresented groups in security.
 
-Our most important task is to create a space where engineers from all backgrounds, especially those from ethnic minorities and other underrepresented groups in technology, can thrive. We believe that the best tools are built by diverse teams, and we are dedicated to making that a reality.
-
-Please read our [Code of Conduct](./CODE_OF_CONDUCT.md) and our [Contributing Guide](./CONTRIBUTING.md) to learn more about our values and how you can get involved.
-
-## Development
-
-Contributions are welcome! Please see `CONTRIBUTING.md` for more details.
-
-## License
-
-This project is licensed under the MIT License.
+##  License
+MIT © [Your Name] - See [LICENSE](LICENSE) for details

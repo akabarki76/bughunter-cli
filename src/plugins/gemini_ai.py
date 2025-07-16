@@ -1,18 +1,27 @@
-from src.tool_manager import register_plugin, Plugin
+from src.utils.tool_registration import register_tool, BaseTool
+import google.generativeai as genai
+import os
 
-@register_plugin("gemini")
-class GeminiAI(Plugin):
-    def analyze(self, code):
-        # AI-powered vulnerability detection
-        # Placeholder for actual AI analysis
-        return {"analysis": "AI analysis results for the provided code."}
+@register_tool("gemini_ai")
+class GeminiAI(BaseTool):
+    name = "gemini_ai"
+    description = "AI-powered text generation using Google Gemini."
 
-    def execute(self, context: dict) -> dict:
-        """Executes the Gemini AI analysis plugin."""
-        code_to_analyze = context.get("code", "")
-        if not code_to_analyze:
-            raise ValueError("No code provided in context for GeminiAI analysis.")
-        
-        analysis_results = self.analyze(code_to_analyze)
-        context["ai_analysis_results"] = analysis_results
-        return context
+    def __init__(self):
+        super().__init__(self.name, self.description)
+        gemini_api_key = os.getenv("GEMINI_API_KEY")
+        if gemini_api_key:
+            genai.configure(api_key=gemini_api_key)
+        else:
+            raise ValueError("GEMINI_API_KEY not configured. Please set it in your .env file.")
+
+    def run(self, prompt: str, output_file: str = None, **kwargs):
+        try:
+            model = genai.GenerativeModel("gemini-pro")
+            response = model.generate_content(prompt)
+            if output_file:
+                with open(output_file, "w") as f:
+                    f.write(response.text)
+            return response.text
+        except Exception as e:
+            return f"Error calling Gemini API: {e}"

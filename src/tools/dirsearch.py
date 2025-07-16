@@ -5,8 +5,7 @@ import subprocess
 class DirsearchTool(BaseTool):
     name = "dirsearch"
 
-    def is_installed(self):
-        return subprocess.run(["which", "dirsearch"], capture_output=True).returncode == 0
+    
 
     def run(self, target, output_file=None, **kwargs):
         cmd = ["dirsearch", "-u", target, "--json-report", "/dev/stdout"]

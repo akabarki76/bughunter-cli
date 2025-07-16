@@ -9,7 +9,7 @@ from github import Github
 from dotenv import load_dotenv
 import json
 import difflib
-import shlex
+
 import yaml
 import asyncio
 from src.tools import TOOL_REGISTRY

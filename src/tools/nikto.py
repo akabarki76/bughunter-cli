@@ -5,8 +5,7 @@ import subprocess
 class NiktoTool(BaseTool):
     name = "nikto"
 
-    def is_installed(self):
-        return subprocess.run(["which", "nikto"], capture_output=True).returncode == 0
+    
 
     def run(self, target, output_file=None, **kwargs):
         cmd = ["nikto", "-h", target]

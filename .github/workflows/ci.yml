@@ -23,3 +23,7 @@ jobs:
     - name: Test with pytest
       run: |
         PYTHONPATH=src pytest
+    - name: Bandit Security Scan
+      run: |
+        pip install bandit
+        bandit -r . -c pyproject.toml

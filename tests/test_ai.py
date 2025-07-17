@@ -56,6 +56,6 @@ def test_ai_analyze(mock_find_subdomains, mock_call_ai_api):
 
     from urllib.parse import urlparse
     parsed_prompt = urlparse(prompt_arg)
-    assert parsed_prompt.hostname and parsed_prompt.hostname.endswith("blog.example.com")
-    assert parsed_prompt.hostname and parsed_prompt.hostname.endswith("api.example.com")
+    assert parsed_prompt.hostname and is_valid_subdomain(parsed_prompt.hostname, "blog.example.com")
+    assert parsed_prompt.hostname and is_valid_subdomain(parsed_prompt.hostname, "api.example.com")
 

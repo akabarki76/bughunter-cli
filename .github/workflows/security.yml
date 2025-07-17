@@ -1,0 +1,12 @@
+name: Security Audit
+on: [push, pull_request]
+
+jobs:
+  dependency-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check dependencies
+        run: |
+          pip install safety
+          safety check --full-report

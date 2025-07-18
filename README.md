@@ -1,109 +1,104 @@
-# `bughunter-cli` 🐞
+# BugHunter-CLI
 
-**An AI-native command-line interface for advanced bug hunting, security analysis, and automated development workflows.**
+[![Build Status](https://img.shields.io/github/actions/workflow/status/barki/bughunter-cli/ci.yml?branch=main)](https://github.com/barki/bughunter-cli/actions)
+[![License](https://img.shields.io/github/license/barki/bughunter-cli)](LICENSE)
+[![version](https://img.shields.io/pypi/v/bughunter-cli.svg)](https://pypi.org/project/bughunter-cli/)
+[![Python Version](https://img.shields.io/pypi/pyversions/bughunter-cli.svg)](https://pypi.org/project/bughunter-cli/)
+[![CodeQL](https://github.com/barki/bughunter-cli/actions/workflows/codeql.yml/badge.svg)](https://github.com/barki/bughunter-cli/actions/workflows/codeql.yml)
 
-`bughunter-cli` is a next-generation tool that integrates powerful security scanners with Large Language Models (LLMs) to provide a seamless, intelligent, and future-proof solution for developers, security researchers, and penetration testers.
+> Your AI-powered, gamified command-line companion for modern bug hunting and web security analysis.
 
-## VibeOps Engineering
-
-`bughunter-cli` is built on the principles of **VibeOps**, an engineering culture that leverages AI and natural language to automate and simplify the entire software development lifecycle. This tool embodies the VibeOps philosophy by:
-
-- **Enhancing Developer Experience (DevEx):** Providing a seamless, conversational interface to complex security and development tasks.
-- **AI-Assisted Workflow:** Using LLMs to automate reconnaissance, vulnerability analysis, and even code patching.
-- **CI/CD and Automation:** Automating routine tasks to streamline development and security operations.
-- **AI SRE:** Moving towards a future of AI-driven Site Reliability Engineering, where monitoring and remediation are increasingly automated.
-
-## Key Features
-
-*   **AI-Powered Autocorrection:** Automatically find and fix vulnerabilities in your code with AI-generated patches.
-*   **Natural Language Interface:** Interact with the tool using conversational language via the `vibe` command.
-*   **Comprehensive Scanning:**
-    *   **Code Scanning:** Language-agnostic vulnerability scanning with Semgrep.
-    *   **Dependency Scanning:** Find known vulnerabilities in your project's dependencies using `osv-scanner`.
-    *   **Reconnaissance:** Discover subdomains and scan for open ports.
-*   **Full GitHub Integration:** Manage issues, pull requests, and comments directly from your terminal.
-*   **Extensible and Future-Proof:** Designed to be a constantly evolving platform that will integrate new AI and security technologies as they emerge.
-
-## Future-Proofing `bughunter-cli`
-
-The world of AI and cybersecurity is evolving at an unprecedented pace. `bughunter-cli` is designed to be a living project that will continuously adapt and integrate the latest advancements. Our commitment is to keep this tool at the forefront of technology, ensuring it remains an essential part of any modern development workflow.
-
-We are actively exploring and developing features in areas such as:
-
-*   **AI-Driven Refactoring:** Suggesting improvements to code structure, readability, and performance.
-*   **Advanced Dependency Management:** Proactively managing dependency updates and assessing their security impact.
-*   **Interactive Learning:** Creating a more engaging and educational experience by teaching users about the vulnerabilities found in their code.
-
-## Installation
-
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/your-username/bughunter-cli.git
-    cd bughunter-cli
-    ```
-
-2.  **Create and activate a virtual environment:**
-    ```bash
-    python -m venv venv
-    source venv/bin/activate
-    ```
-
-3.  **Install the required dependencies:**
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-4.  **Install the CLI in editable mode:**
-    ```bash
-    pip install -e .
-    ```
-
-5.  **Install External Scanners:**
-    *   **`osv-scanner`:** [google.github.io/osv-scanner/](https://google.github.io/osv-scanner/)
-    *   **`nmap`:** `sudo apt-get install nmap` (or your system's equivalent)
-    *   **`cppcheck`:** `sudo apt-get install cppcheck` (or your system's equivalent)
-
-
-## Configuration
-
-`bughunter-cli` requires API keys for its AI and GitHub features.
-
-*   **Gemini API Key:** Obtain a key from [Google AI Studio](https://aistudio.google.com/app/apikey) and set it as `GEMINI_API_KEY` in a `.env` file.
-*   **GitHub Personal Access Token:** Run `bughunter github init` and provide a PAT with `repo` and `read:org` scopes.
-
-## Usage
-
-### VibeOps Commands
-
-*   **`vibe <prompt>`:** Interact with the tool using natural language.
-    *   `bughunter vibe "find subdomains for example.com"`
-*   **`tags`:** List the VibeOps engineering tags.
-
-### Scanning Commands
-
-*   **`scan code <path> [--autocorrect]`:** Scan code for vulnerabilities and optionally apply AI-powered fixes.
-*   **`scan web <path> [--autocorrect]`:** Scan a web project for vulnerabilities and optionally apply AI-powered fixes.
-*   **`scan c-cpp <path>`:** Scan C/C++ code for vulnerabilities using `cppcheck`.
-*   **`scan dependencies <path>`:** Scan project dependencies for known vulnerabilities.
-*   **`scan subdomains <target>`:** Find subdomains for a target.
-*   **`scan ports <target>`:** Scan for open ports.
+BugHunter-CLI is an extensible and intelligent framework designed to streamline and enhance the process of web application security testing. It integrates a suite of powerful open-source tools, automates complex workflows, and leverages Gemini AI for smarter analysis and prompt engineering. The built-in gamification system keeps you motivated and tracks your progress.
 
 ---
 
-*For a full list of commands and options, run `bughunter --help`.*
+### Table of Contents
 
-## Our Community
+*   [About The Project](#about-the-project)
+*   [Key Features](#key-features)
+*   [Getting Started](#getting-started)
+    *   [Prerequisites](#prerequisites)
+    *   [Installation](#installation)
+*   [Usage](#usage)
+*   [Roadmap](#roadmap)
+*   [Contributing](#contributing)
+*   [License](#license)
+*   [Acknowledgments](#acknowledgments)
 
-**This project is more than just code; it's a community.** We are committed to building a welcoming, inclusive, and safe environment for everyone.
+---
 
-Our most important task is to create a space where engineers from all backgrounds, especially those from ethnic minorities and other underrepresented groups in technology, can thrive. We believe that the best tools are built by diverse teams, and we are dedicated to making that a reality.
+### About The Project
 
-Please read our [Code of Conduct](./CODE_OF_CONDUCT.md) and our [Contributing Guide](./CONTRIBUTING.md) to learn more about our values and how you can get involved.
+This project was born from the need for a more efficient, integrated, and intelligent approach to bug bounty hunting and penetration testing. Instead of juggling multiple tools and manually correlating results, BugHunter-CLI provides a single, powerful interface to orchestrate scans, manage findings, and uncover vulnerabilities.
 
-## Development
+By integrating with Google's Gemini AI, the CLI can offer intelligent suggestions, generate dynamic scan configurations, and help you understand complex vulnerabilities, making it a powerful learning tool as well.
 
-Contributions are welcome! Please see `CONTRIBUTING.md` for more details.
+### Key Features
 
-## License
+*   **🤖 AI-Powered Analysis**: Utilizes Gemini AI (`src/plugins/gemini_ai.py`) for intelligent prompt engineering and analysis.
+*   **🔧 Integrated Toolchain**: Comes packed with industry-standard tools like `nmap`, `nikto`, `nuclei`, `sqlmap`, `dirsearch`, and more (`src/tools/`).
+*   **⚙️ Workflow Engine**: Create and run complex, multi-step security testing workflows (`src/workflow_engine.py`).
+*   **🎮 Gamification**: Earn points and track your progress with a built-in gamification system (`src/gamification.py`).
+*   **🔌 Extensible Plugins**: Easily add new tools and functionality through a simple plugin architecture (`src/plugins/`).
+*   **📜 Rich Documentation**: Comprehensive guides available in the [Wiki](wiki/Home.md).
 
-This project is licensed under the MIT License.
+### Getting Started
+
+To get a local copy up and running, follow these simple steps.
+
+#### Prerequisites
+
+*   Python 3.10+
+*   `git`
+
+#### Installation
+
+1.  **Clone the repository:**
+    ```sh
+    git clone https://github.com/barki/bughunter-cli.git
+    cd bughunter-cli
+    ```
+2.  **Install dependencies:**
+    The project includes a helper script to install all necessary components.
+    ```sh
+    ./install_dependencies.sh
+    ```
+3.  **Activate the virtual environment:**
+    ```sh
+    source venv/bin/activate
+    ```
+
+### Usage
+
+Execute a basic web application scan using the interactive UI:
+
+```sh
+python src/main.py --target example.com
+```
+
+To run a specific tool directly:
+
+```sh
+python src/main.py --tool nmap --target scanme.nmap.org --args "-sV -p 22,80,443"
+```
+
+For more detailed instructions and commands, please refer to the [Command Reference](wiki/Command-Reference.md).
+
+### Roadmap
+
+See the [ROADMAP.md](ROADMAP.md) for a full list of proposed features and future development plans.
+
+### Contributing
+
+Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+
+Please see [CONTRIBUTING.md](CONTRIBUTING.md) for our guidelines and the [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+
+### License
+
+Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
+
+### Acknowledgments
+
+*   To the creators of all the integrated open-source security tools.
+*   Our community of contributors.

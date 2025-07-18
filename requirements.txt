@@ -1,6 +1,14 @@
 click
-requests
+requests>=2.32.1
 google-generativeai
 python-dotenv
 PyGithub
 semgrep
+pyyaml
+cachetools
+rich
+pytest
+requests_toolbelt
+httpx
+beautifulsoup4
+httpx_ntlm

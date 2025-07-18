@@ -1,0 +1,15 @@
+# Default Security Policy for bughunter-cli
+
+compliance:
+  owasp_top_10: true
+  custom_rules:
+    - pattern: 'password\s*=\s*.+'
+      severity: critical
+      description: "Hardcoded passwords are not allowed."
+    - pattern: 'api_key\s*=\s*.+'
+      severity: high
+      description: "Hardcoded API keys are not allowed."
+
+disallowed_patterns:
+  - "TODO: Fix this vulnerability"
+  - "FIXME: Security issue"

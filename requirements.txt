@@ -4,7 +4,11 @@ google-generativeai
 python-dotenv
 PyGithub
 semgrep
-restrictedpython
 pyyaml
 cachetools
 rich
+pytest
+requests_toolbelt
+httpx
+beautifulsoup4
+httpx_ntlm

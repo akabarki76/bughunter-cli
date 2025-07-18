@@ -1,5 +1,5 @@
 from unittest.mock import patch
-from click.testing import CliRunner
+import pytest
 from urllib.parse import urlparse
 
 def is_valid_subdomain(hostname, domain):
@@ -34,15 +34,17 @@ def test_ai_analyze(mock_find_subdomains, mock_call_ai_api):
     # In a real scenario, you'd use a more robust regex or NLP to extract URLs from the prompt.
     # For the purpose of this test, we'll assume the subdomains are directly present.
     
+    parsed_blog_url = None
     # Check for blog.example.com
-    if "blog.example.com" in prompt_arg:
+    if "blog.example.com" in prompt_arg.split():
         parsed_blog_url = urlparse(f"http://blog.example.com")
         assert parsed_blog_url.hostname and is_valid_subdomain(parsed_blog_url.hostname, "blog.example.com")
     else:
         pytest.fail("blog.example.com not found in prompt_arg")
 
+    parsed_api_url = None
     # Check for api.example.com
-    if "api.example.com" in prompt_arg:
+    if "api.example.com" in prompt_arg.split():
         parsed_api_url = urlparse(f"http://api.example.com")
         assert parsed_api_url.hostname and is_valid_subdomain(parsed_api_url.hostname, "api.example.com")
     else:

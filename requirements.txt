@@ -4,11 +4,10 @@ google-generativeai
 python-dotenv
 PyGithub
 semgrep
-pyyaml
+PyYAML>=5.4
 cachetools
 rich
 pytest
 requests_toolbelt
-httpx
-beautifulsoup4
+httpx>=0.22.0beautifulsoup4
 httpx_ntlm

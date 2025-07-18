@@ -7,17 +7,17 @@ import os
 def scan_web_app(app):
     """Placeholder for a web app scanning function."""
     print(f"Scanning web app: {app}")
-    pass
+
 
 def scan_api(api_spec):
     """Placeholder for an API scanning function."""
     print(f"Scanning API spec: {api_spec}")
-    pass
+
 
 def analyze_with_ai(file):
     """Placeholder for an AI analysis function."""
     print(f"Analyzing file with AI: {file}")
-    pass
+
 
 def run_performance_tests():
     tests = {

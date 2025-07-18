@@ -8,8 +8,7 @@ import asyncio
 from datetime import datetime
 from urllib.parse import urlparse
 from functools import wraps
-from restrictedpython import compile_restricted
-from restrictedpython.builtins import safe_builtins
+
 
 def validate_url(url):
     """Strict URL validation with scheme verification"""
@@ -69,7 +68,8 @@ async def run_in_sandbox(command: list, target_path: str, description: str = "Ru
                 *command,
                 cwd=sandbox_dir,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
+                stderr=subprocess.PIPE,
+                env=os.environ.copy()
             )
             stdout, stderr = await process.communicate()
             return stdout.decode(), stderr.decode(), process.returncode

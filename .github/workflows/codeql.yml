@@ -27,7 +27,7 @@ jobs:
         - language: javascript-typescript
           build-mode: none
         - language: cpp
-          build-mode: autobuild
+          build-mode: manual
 
     steps:
     - name: Checkout repository
@@ -83,7 +83,7 @@ jobs:
         bughunter-cli ai generate-report ai-report.json --format markdown > ai-security-report.md
 
     - name: Upload AI security report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ai-security-report
         path: ai-security-report.md
@@ -136,7 +136,7 @@ jobs:
           --format markdown > executive-report.md
 
     - name: Upload Executive Report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: security-executive-report
         path: executive-report.md
@@ -181,7 +181,7 @@ jobs:
           --format markdown > container-report.md
 
     - name: Upload Container Report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: container-security-report
         path: container-report.md
@@ -205,7 +205,7 @@ jobs:
       run: safety check --json > dependency-scan.json
 
     - name: Upload results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: dependency-scan-results
         path: dependency-scan.json

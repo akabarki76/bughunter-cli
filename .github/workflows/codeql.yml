@@ -26,9 +26,7 @@ jobs:
           build-mode: none
         - language: javascript-typescript
           build-mode: none
-        - language: java-kotlin
-          build-mode: none
-        - language: c-cpp
+        - language: cpp
           build-mode: manual
 
     steps:
@@ -44,16 +42,10 @@ jobs:
         build-mode: ${{ matrix.build-mode }}
         queries: security-extended,security-and-quality
 
-    - name: Build project (C/C++ only)
-      if: matrix.language == 'c-cpp'
-      run: |
-        ./configure
-        make -j$(nproc)
-
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
       with:
-        category: "/language:${{ matrix.language }}"
+        category: "language:${{ matrix.language }}"
 
   ai-security-scan:
     name: AI-Powered Security Scan
@@ -72,10 +64,11 @@ jobs:
       with:
         python-version: '3.10'
 
-    - name: Install bughunter-cli with AI dependencies
+    - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install bughunter-cli[ai]
+        pip install -r requirements.txt
+        pip install httpx_ntlm beautifulsoup4
         echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> $GITHUB_ENV
         echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> $GITHUB_ENV
 
@@ -90,7 +83,7 @@ jobs:
         bughunter-cli ai generate-report ai-report.json --format markdown > ai-security-report.md
 
     - name: Upload AI security report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ai-security-report
         path: ai-security-report.md
@@ -143,7 +136,7 @@ jobs:
           --format markdown > executive-report.md
 
     - name: Upload Executive Report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: security-executive-report
         path: executive-report.md
@@ -188,30 +181,31 @@ jobs:
           --format markdown > container-report.md
 
     - name: Upload Container Report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: container-security-report
         path: container-report.md
-        dependency-scan:
-  name: Dependency Vulnerability Scan
-  runs-on: ubuntu-latest
-  steps:
-  - name: Checkout repository
-    uses: actions/checkout@v4
+  
+  dependency-scan:
+    name: Dependency Vulnerability Scan
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-  - name: Set up Python
-    uses: actions/setup-python@v4
-    with:
-      python-version: '3.10'
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
 
-  - name: Install dependencies
-    run: pip install safety
+    - name: Install dependencies
+      run: pip install safety
 
-  - name: Scan Python dependencies
-    run: safety check --json > dependency-scan.json
+    - name: Scan Python dependencies
+      run: safety check --json > dependency-scan.json
 
-  - name: Upload results
-    uses: actions/upload-artifact@v3
-    with:
-      name: dependency-scan-results
-      path: dependency-scan.json
+    - name: Upload results
+      uses: actions/upload-artifact@v4
+      with:
+        name: dependency-scan-results
+        path: dependency-scan.json

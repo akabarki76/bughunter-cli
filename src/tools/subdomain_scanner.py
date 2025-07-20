@@ -41,7 +41,7 @@ def find_subdomains(target):
 class SubdomainScanner(BaseTool):
     """A tool to find subdomains of a target domain."""
 
-    def execute(self, target):
+    def execute(self, target, *args, **kwargs):
         """Finds subdomains of a target domain using crt.sh."""
         click.echo(f'[*] Searching for subdomains for {target}...')
         subdomain_list = find_subdomains(target)

@@ -15,7 +15,8 @@ import asyncio
 from src.tools import TOOL_REGISTRY
 from src.tools.refactor import refactor
 from src.tools.learn import learn
-from src.tools.pullpush import pullpush
+from src.tools import nmap, nikto, dirsearch, sqlmap, waybackurls, nuclei
+from src.tools.pullpush import pullpush as pullpush_command
 
 
 
@@ -878,7 +879,10 @@ def tags():
 
 cli.add_command(refactor)
 cli.add_command(learn)
-cli.add_command(pullpush)
+cli.add_command(pullpush_command)
+cli.add_command(pullpush_command)
+cli.add_command(pullpush_command)
+
 
 
 

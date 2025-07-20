@@ -9,5 +9,6 @@ cachetools
 rich
 pytest
 requests_toolbelt
-httpx>=0.22.0beautifulsoup4
+httpx>=0.22.0
+beautifulsoup4
 httpx_ntlm

@@ -1,9 +1,10 @@
-from unittest.mock import patch
+from click.testing import CliRunner
+from src.main import analyze
+from unittest.mock import patch, MagicMock
 import pytest
 from urllib.parse import urlparse
 
-def is_valid_subdomain(hostname, domain):
-    return hostname == domain or (hostname and hostname.endswith(f".{domain}"))
+
 
 @patch('src.main.call_ai_api')
 @patch('src.main.find_subdomains')
@@ -26,26 +27,5 @@ def test_ai_analyze(mock_find_subdomains, mock_call_ai_api):
     # You could also add more specific assertions on the prompt passed to the AI
     prompt_arg = mock_call_ai_api.call_args[0][0]
     
-    # Extract subdomains from the prompt_arg and validate them
-    # This assumes the prompt_arg contains the subdomains as part of a URL or directly.
-    # For this test, we'll check if the subdomains are present in the prompt_arg
-    # and then validate them as if they were part of a URL.
-    
-    # In a real scenario, you'd use a more robust regex or NLP to extract URLs from the prompt.
-    # For the purpose of this test, we'll assume the subdomains are directly present.
-    
-    parsed_blog_url = None
-    # Check for blog.example.com
-    if "blog.example.com" in prompt_arg.split():
-        parsed_blog_url = urlparse(f"http://blog.example.com")
-        assert parsed_blog_url.hostname and is_valid_subdomain(parsed_blog_url.hostname, "blog.example.com")
-    else:
-        pytest.fail("blog.example.com not found in prompt_arg")
-
-    parsed_api_url = None
-    # Check for api.example.com
-    if "api.example.com" in prompt_arg.split():
-        parsed_api_url = urlparse(f"http://api.example.com")
-        assert parsed_api_url.hostname and is_valid_subdomain(parsed_api_url.hostname, "api.example.com")
-    else:
-        pytest.fail("api.example.com not found in prompt_arg")
+    assert "blog.example.com" in prompt_arg
+    assert "api.example.com" in prompt_arg

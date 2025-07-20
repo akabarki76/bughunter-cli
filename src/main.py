@@ -15,6 +15,7 @@ import asyncio
 from src.tools import TOOL_REGISTRY
 from src.tools.refactor import refactor
 from src.tools.learn import learn
+from src.tools.pullpush import pullpush
 
 
 
@@ -877,6 +878,7 @@ def tags():
 
 cli.add_command(refactor)
 cli.add_command(learn)
+cli.add_command(pullpush)
 
 
 

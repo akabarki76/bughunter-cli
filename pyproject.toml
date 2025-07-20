@@ -8,8 +8,13 @@ description = "A CLI tool for bug hunting and development tasks."
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [
-    "click==8.1.7",
-    "PyGithub==2.2.0",
+
+    "click==8.1.8",
+    "PyGithub==2.6.1",
+
+    "click==8.1.8",
+    "PyGithub==2.6.1",
+
 ]
 
 classifiers = [
@@ -28,3 +33,10 @@ bughunter = "src.main:cli"
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[tool.bandit]
+exclude_dirs = ["tests", "venv"]
+skips = ["B101"]
+
+[tool.setuptools.packages.find]
+where = ["src"]

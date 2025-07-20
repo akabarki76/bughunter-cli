@@ -40,19 +40,19 @@ def test_ai_analyze(mock_find_subdomains, mock_call_ai_api):
     # In a real scenario, you'd use a more robust regex or NLP to extract URLs from the prompt.
     # For the purpose of this test, we'll assume the subdomains are directly present.
     
-    # Check for blog.example.com
-    if "blog.example.com" in prompt_arg:
-        parsed_blog_url = urlparse(f"http://blog.example.com")
-        assert parsed_blog_url.hostname and is_valid_subdomain(parsed_blog_url.hostname, "blog.example.com")
-    else:
-        pytest.fail("blog.example.com not found in prompt_arg")
+    # Extract hostnames from the prompt_arg using regex and validate them
+    import re
+    hostname_pattern = r'\b([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\b'
+    found_blog = False
+    found_api = False
+    for match in re.findall(hostname_pattern, prompt_arg):
+        if is_valid_subdomain(match, "blog.example.com"):
+            found_blog = True
+        if is_valid_subdomain(match, "api.example.com"):
+            found_api = True
 
-    # Check for api.example.com
-    if "api.example.com" in prompt_arg:
-        parsed_api_url = urlparse(f"http://api.example.com")
-        assert parsed_api_url.hostname and is_valid_subdomain(parsed_api_url.hostname, "api.example.com")
-    else:
-        pytest.fail("api.example.com not found in prompt_arg")
+    assert found_blog, "blog.example.com not found or invalid in prompt_arg"
+    assert found_api, "api.example.com not found or invalid in prompt_arg"
 
     from urllib.parse import urlparse
     parsed_prompt = urlparse(prompt_arg)

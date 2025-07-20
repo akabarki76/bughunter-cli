@@ -10,9 +10,112 @@ Classifier: License :: OSI Approved :: MIT License
 Classifier: Operating System :: OS Independent
 Requires-Python: >=3.8
 Description-Content-Type: text/markdown
+License-File: LICENSE
 Requires-Dist: click==8.1.7
 Requires-Dist: PyGithub==2.2.0
+Dynamic: license-file
 
-# bughunter-cli
+# BugHunter-CLI
 
-A command-line interface for bug hunting and development tasks.
+[![Build Status](https://img.shields.io/github/actions/workflow/status/barki/bughunter-cli/ci.yml?branch=main)](https://github.com/barki/bughunter-cli/actions)
+[![License](https://img.shields.io/github/license/barki/bughunter-cli)](LICENSE)
+[![version](https://img.shields.io/pypi/v/bughunter-cli.svg)](https://pypi.org/project/bughunter-cli/)
+[![Python Version](https://img.shields.io/pypi/pyversions/bughunter-cli.svg)](https://pypi.org/project/bughunter-cli/)
+[![CodeQL](https://github.com/barki/bughunter-cli/actions/workflows/codeql.yml/badge.svg)](https://github.com/barki/bughunter-cli/actions/workflows/codeql.yml)
+
+> Your AI-powered, gamified command-line companion for modern bug hunting and web security analysis.
+
+BugHunter-CLI is an extensible and intelligent framework designed to streamline and enhance the process of web application security testing. It integrates a suite of powerful open-source tools, automates complex workflows, and leverages Gemini AI for smarter analysis and prompt engineering. The built-in gamification system keeps you motivated and tracks your progress.
+
+---
+
+### Table of Contents
+
+*   [About The Project](#about-the-project)
+*   [Key Features](#key-features)
+*   [Getting Started](#getting-started)
+    *   [Prerequisites](#prerequisites)
+    *   [Installation](#installation)
+*   [Usage](#usage)
+*   [Roadmap](#roadmap)
+*   [Contributing](#contributing)
+*   [License](#license)
+*   [Acknowledgments](#acknowledgments)
+
+---
+
+### About The Project
+
+This project was born from the need for a more efficient, integrated, and intelligent approach to bug bounty hunting and penetration testing. Instead of juggling multiple tools and manually correlating results, BugHunter-CLI provides a single, powerful interface to orchestrate scans, manage findings, and uncover vulnerabilities.
+
+By integrating with Google's Gemini AI, the CLI can offer intelligent suggestions, generate dynamic scan configurations, and help you understand complex vulnerabilities, making it a powerful learning tool as well.
+
+### Key Features
+
+*   **🤖 AI-Powered Analysis**: Utilizes Gemini AI (`src/plugins/gemini_ai.py`) for intelligent prompt engineering and analysis.
+*   **🔧 Integrated Toolchain**: Comes packed with industry-standard tools like `nmap`, `nikto`, `nuclei`, `sqlmap`, `dirsearch`, and more (`src/tools/`).
+*   **⚙️ Workflow Engine**: Create and run complex, multi-step security testing workflows (`src/workflow_engine.py`).
+*   **🎮 Gamification**: Earn points and track your progress with a built-in gamification system (`src/gamification.py`).
+*   **🔌 Extensible Plugins**: Easily add new tools and functionality through a simple plugin architecture (`src/plugins/`).
+*   **📜 Rich Documentation**: Comprehensive guides available in the [Wiki](wiki/Home.md).
+
+### Getting Started
+
+To get a local copy up and running, follow these simple steps.
+
+#### Prerequisites
+
+*   Python 3.10+
+*   `git`
+
+#### Installation
+
+1.  **Clone the repository:**
+    ```sh
+    git clone https://github.com/barki/bughunter-cli.git
+    cd bughunter-cli
+    ```
+2.  **Install dependencies:**
+    The project includes a helper script to install all necessary components.
+    ```sh
+    ./install_dependencies.sh
+    ```
+3.  **Activate the virtual environment:**
+    ```sh
+    source venv/bin/activate
+    ```
+
+### Usage
+
+Execute a basic web application scan using the interactive UI:
+
+```sh
+python src/main.py --target example.com
+```
+
+To run a specific tool directly:
+
+```sh
+python src/main.py --tool nmap --target scanme.nmap.org --args "-sV -p 22,80,443"
+```
+
+For more detailed instructions and commands, please refer to the [Command Reference](wiki/Command-Reference.md).
+
+### Roadmap
+
+See the [ROADMAP.md](ROADMAP.md) for a full list of proposed features and future development plans.
+
+### Contributing
+
+Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+
+Please see [CONTRIBUTING.md](CONTRIBUTING.md) for our guidelines and the [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+
+### License
+
+Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
+
+### Acknowledgments
+
+*   To the creators of all the integrated open-source security tools.
+*   Our community of contributors.

@@ -8,6 +8,18 @@ import asyncio
 from datetime import datetime
 from urllib.parse import urlparse
 from functools import wraps
+from dotenv import load_dotenv
+
+class CredentialManager:
+    def __init__(self):
+        load_dotenv()  # Load from .env file
+        self.secrets = {
+            "GOOGLE_API": os.getenv("GOOGLE_API_KEY", ""),
+            "OPENAI_API": os.getenv("OPENAI_API_KEY", "")
+        }
+
+    def get_key(self, service_name):
+        return self.secrets.get(service_name, "")
 
 
 def validate_url(url):

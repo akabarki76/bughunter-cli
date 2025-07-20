@@ -1,2 +1,5 @@
-__init__
-main
+ai
+plugins
+tools
+ui
+utils

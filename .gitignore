@@ -1,8 +1,72 @@
+# Gitignore for bughunter-cli
 
-# Temporary directories and build artifacts
-.tmp_metadata/
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.pyc
+*.pyd
+*.pyo
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
 dist/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Unit test / coverage
+.coverage
+.pytest_cache/
+htmlcov/
+
+# Virtual environment
 venv/
 .env
-dirsearch/
-*.pyc
+
+# IDEs and editors
+.idea/
+.vscode/
+*.swp
+*.bak
+*.swo
+
+# OS generated files
+.DS_Store
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs and databases
+*.log
+*.sqlite3
+*.db
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+
+# Specific to bughunter-cli
+# Add any other specific files or directories to ignore here
+BugHunt-cli-main.zip
+/intelli-agent-framework/
+/dirsearch/
+/dist/
+/user_dashboard/
+/benchmarks/
+/ctf/
+/wiki/
+/venv/
+/tmp_metadata/
+/src/bughunter_cli.egg-info/
+/src/__pycache__/
+/src/ai/__pycache__/
+/src/plugins/__pycache__/
+/src/tools/__pycache__/
+/src/ui/__pycache__/
+/src/utils/__pycache__/
+/tests/__pycache__/

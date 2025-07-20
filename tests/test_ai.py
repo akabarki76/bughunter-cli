@@ -36,8 +36,8 @@ def test_ai_analyze(mock_find_subdomains, mock_call_ai_api):
     prompt_arg = mock_call_ai_api.call_args[0][0]
 
 
-    assert "blog.example.com" in prompt_arg
-    assert "api.example.com" in prompt_arg
+    # Substring checks removed; see validation below.
+
 
     # Extract subdomains from the prompt_arg and validate them
     # This assumes the prompt_arg contains the subdomains as part of a URL or directly.

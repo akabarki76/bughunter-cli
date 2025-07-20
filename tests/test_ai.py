@@ -1,14 +1,18 @@
 
+
 import pytest
 from urllib.parse import urlparse
 from src.main import analyze
 
 from unittest.mock import patch
+
 from click.testing import CliRunner
+from src.main import analyze
+from unittest.mock import patch, MagicMock
+import pytest
 from urllib.parse import urlparse
 
-def is_valid_subdomain(hostname, domain):
-    return hostname == domain or (hostname and hostname.endswith(f".{domain}"))
+
 
 @patch('src.main.call_ai_api')
 @patch('src.main.find_subdomains')
@@ -31,7 +35,10 @@ def test_ai_analyze(mock_find_subdomains, mock_call_ai_api):
     # You could also add more specific assertions on the prompt passed to the AI
     prompt_arg = mock_call_ai_api.call_args[0][0]
 
-    
+
+    assert "blog.example.com" in prompt_arg
+    assert "api.example.com" in prompt_arg
+
     # Extract subdomains from the prompt_arg and validate them
     # This assumes the prompt_arg contains the subdomains as part of a URL or directly.
     # For this test, we'll check if the subdomains are present in the prompt_arg

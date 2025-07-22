@@ -10,7 +10,7 @@ from click.testing import CliRunner
 from src.main import analyze
 from unittest.mock import patch, MagicMock
 import pytest
-from urllib.parse import urlparse
+
 
 
 

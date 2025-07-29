@@ -1,5 +1,4 @@
 import subprocess
-import click
 
 def run_shell_command(command: str):
     """Runs a shell command and returns its stdout, stderr, and return code."""
